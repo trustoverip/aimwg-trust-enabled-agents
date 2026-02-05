@@ -22,10 +22,9 @@ exchange messages, and coordinate tasks. MCP defines schemas and transports
 (JSON-RPC over stdio and Streamable HTTP) that let models interoperate with tools
 and data sources. A2A specifies inter-agent messaging over HTTPS/SSE/JSON-RPC
 (with gRPC added in v0.3) to coordinate workflows across applications and
-providers. As deployments move from
-isolated AI assistants to multi-agent systems that operate across organizational
-boundaries, the demand for communication protocols that address security and trust
-continues to grow.
+providers. As deployments move from isolated AI assistants to multi-agent systems
+operating across organizational boundaries, the demand for protocols that address
+security and trust continues to grow.
 
 ### The Security Gap: Retrofitting Web-Era Trust Models
 
@@ -38,11 +37,8 @@ declared via agent cards.
 This pragmatic reliance on the web stack accelerates adoption. OAuth and OIDC are
 mature, widely deployed, and well-understood. However, as agents shift from
 experimental prototypes to autonomous, long-lived, cross-domain principals, this
-security foundation reveals structural gaps. Each gap reflects assumptions in the web
-stack that do not hold for autonomous AI agents. Industry practitioners, security
-researchers, standards bodies, and academic publications have documented that the
-web-services security framework does not satisfy the trust requirements of AI agent
-communication.
+security foundation reveals structural gaps. Each gap reflects assumptions in the
+web stack that do not hold for autonomous AI agents.
 
 The gaps fall into three categories:
 
@@ -56,16 +52,20 @@ valuable the problems it can solve. Long-duration agents accumulate context,
 build trust relationships, and develop reputation — all of which depend on stable
 identity. Stable identity is also a prerequisite for accountability: auditing
 agent actions, attributing decisions, and enforcing policy require an identifier
-that persists across sessions and interactions. TLS certificates authenticate *domains*; OAuth 2.0/OIDC tokens identify
-users or service accounts within an IdP's namespace. An agent's identity is
+that persists across sessions and interactions.
+
+The web stack does not provide this. TLS certificates authenticate *domains*;
+OAuth 2.0/OIDC tokens identify users or service accounts within an Identity
+Provider's (IdP's)
+namespace. An agent's identity is
 therefore tied to its current domain or IdP account — not to the agent as a
 persistent principal. If the identifier changes (due to redeployment, provider
 migration, or infrastructure changes), allowlists break, provenance chains are
 disrupted, and accumulated credentials are lost. Today, most agents are deployed
 ephemerally — not because enterprises prefer it, but because the control and
 identity mechanisms for long-lived autonomous agents do not yet exist. Durable
-identity is a prerequisite for the autonomous, long-horizon agents that both
-the A2A specification and academic research envision.
+identity is a prerequisite for the autonomous, long-horizon agents that
+agent protocol specifications and academic research envision.
 
 **Centralization.** OAuth and OIDC depend on centralized Identity Providers.
 Identity federation (OpenID Federation, SAML) enables cross-domain trust, but
@@ -78,8 +78,8 @@ establishment.
 
 **Heterogeneity.** The web stack uses multiple incompatible identifier systems
 (domain names in X.509, {issuer, subject} pairs in OAuth, vendor-specific service
-accounts). Neither MCP nor A2A defines a native, persistent identifier format for
-agents. Cross-vendor collaborations require brittle bilateral mappings. W3C
+accounts). No current agent protocol defines a native, persistent identifier
+format for agents. Cross-vendor collaborations require brittle bilateral mappings. W3C
 Verifiable Credentials 2.0 defines machine-verifiable attestations bound to
 persistent identifiers, but these cannot be used effectively when the underlying
 identifiers are ephemeral and change across deployments.
@@ -91,30 +91,25 @@ cannot independently rotate keys while maintaining identity continuity. If the
 infrastructure operator is compromised, the agent has no independent cryptographic
 basis to re-establish trust.
 
-One might argue that these problems can be addressed by using decentralized
-identifiers (DIDs) as the subject within existing OAuth flows. However,
-substituting a DID for the subject claim does not change OAuth's underlying trust
-model: tokens are still issued by centralized IdPs, scopes remain static, and the
-agent still does not control its own cryptographic keys. The identity substrate
-and the trust model built on top of it are distinct problems.
+The identity substrate and the trust model built on top of it are distinct
+problems. One might argue that using decentralized identifiers (DIDs) as the
+subject within existing OAuth flows would address these issues. However,
+substituting a DID for the subject claim does not change OAuth's underlying
+trust model: tokens are still issued by centralized IdPs, scopes remain static,
+and the agent still does not control its own cryptographic keys.
 
 ### Gap 2: Authentication and Delegated Authorization
 
 OAuth 2.0 delegation lets a client (here, an agent) act on behalf of a resource
-owner. MCP's HTTP transport requires OAuth-style flows; A2A models the same via
-OpenAPI-style auth. When applied to autonomous AI agents, this model exhibits
-several well-documented problems.
-
-**The problems.**
+owner. Current agent protocols rely on OAuth-style flows or OpenAPI-style auth
+for delegated authorization. When applied to autonomous AI agents, this model
+exhibits several well-documented problems.
 
 - *Confused deputy*: In agentic systems, a privileged agent may be manipulated
   into using its credentials on behalf of an unauthorized party. With bearer
   tokens, the agent cannot cryptographically verify *who* is making a request or
   whether the request is authorized — the token works regardless of who triggered
   it. The OWASP MCP Top 10 identifies confused deputy as a primary attack vector.
-  A protocol that binds every message to a verified sender identity gives the
-  agent a cryptographic basis for distinguishing authorized requests from
-  unauthorized ones.
 
 - *Prompt injection*: LLM-based agents are susceptible to prompt injection, where
   malicious content in data (tool results, user inputs, retrieved documents) is
@@ -122,13 +117,9 @@ several well-documented problems.
   vulnerability, but the damage it causes is amplified by the lack of
   authenticated provenance in current protocols. When all data entering an
   agent's context is unauthenticated, the agent and its runtime have no basis
-  for applying differentiated trust policies. If every piece of data carried
-  verified origin — identifying who produced it and through what chain it
-  arrived — the agent's runtime could enforce trust boundaries: treating data
-  from verified, authorized sources differently than data from unverified or
-  low-trust sources. Authenticated provenance does not eliminate prompt
-  injection, but it provides the infrastructure on which effective defenses
-  can be built.
+  for applying differentiated trust policies. Authenticated provenance does
+  not eliminate prompt injection, but it provides the infrastructure on which
+  effective defenses can be built.
 
 - *Token leakage and replay*: OAuth access tokens are bearer tokens — anyone
   holding one can use it until expiry. DPoP (RFC 9449) mitigates this by
@@ -152,28 +143,17 @@ several well-documented problems.
 
 - *Autonomy and lifecycle mismatch*: OAuth's security model assumes interactive
   human consent and persistent authorization relationships. Autonomous agents
-  operate at machine speed and may exist for minutes. This leads to either overly
-  broad long-lived tokens or impractical per-agent approval flows.
+  operate at machine speed, may run for hours, days, or months, and spawn
+  sub-agents dynamically. OAuth's consent-driven model does not scale with
+  the frequency, duration, and system size of agentic workflows — leading to
+  either overly broad long-lived tokens or impractical per-agent approval flows.
 
-**Evolutionary efforts.** The OAuth community is actively addressing some of these
-problems: Rich Authorization Requests (RFC 9396) for fine-grained scoping, DPoP
-(RFC 9449) for proof-of-possession token binding, Token Exchange (RFC 8693) for
-delegation across service boundaries, and CIBA for non-interactive authorization.
-These are meaningful improvements.
-
-**Why evolution is not enough.** These extensions address individual symptoms within
-the existing architectural model. The structural issues remain: all mechanisms
-still depend on centralized IdPs (the same limitations as Gap 1); token semantics
-remain opaque to relying parties (a DPoP-bound token proves key possession but not
-the delegation chain or task context behind it); scopes are still defined by
-authorization servers, not negotiated between agents; and token exchange enables
-one layer of re-delegation but not cryptographically verifiable chains that
-downstream parties can independently audit. Each extension also adds complexity
-requiring coordination across separate administrative domains.
-
-The common root cause is the same as Gap 1: the trust model depends on external
-centralized infrastructure rather than on the cryptographic relationship between
-the communicating endpoints.
+The OAuth community is actively extending the framework — Rich Authorization
+Requests (RFC 9396), DPoP (RFC 9449), Token Exchange (RFC 8693), CIBA — and
+these are meaningful improvements. However, they address individual symptoms
+within the existing architectural model. The common root cause remains: the
+trust model depends on external centralized infrastructure rather than on the
+cryptographic relationship between the communicating endpoints.
 
 This specification defines a protocol-native approach to authentication and
 delegation that addresses these structural issues, detailed in subsequent
@@ -190,7 +170,7 @@ sessions, not to the data itself. When an agent retrieves data and passes it to
 another agent, downstream recipients cannot verify its authenticity without
 re-fetching from the original source. Multi-hop workflows cannot build durable
 provenance chains. For example, when an orchestrator agent delegates a task to
-a specialist agent that invokes a tool via MCP, the orchestrator receives the
+a specialist agent that invokes a tool, the orchestrator receives the
 tool result through the specialist but has no cryptographic proof that the
 result originated from the tool and was not modified in transit.
 
@@ -216,23 +196,27 @@ identifier, provenance is verifiable at each hop, and the mechanism is consisten
 across agent protocols. More broadly, when the identity substrate changes (as
 argued in Gap 1), the authentication, authorization, and data authenticity
 mechanisms built on top of it benefit from being native to that substrate rather
-than adapted from frameworks designed for a different identity model. TSP provides
-this through message-level signatures bound to verifiable identifiers.
+than adapted from frameworks designed for a different identity model.
 
-**Metadata privacy.** Even with TLS, network metadata — IP addresses, traffic
+#### Metadata privacy
+
+Even with TLS, network metadata — IP addresses, traffic
 timing, packet sizes, and communication patterns — remains exposed (RFC 7624).
 In multi-agent systems where frequent, structured exchanges are the norm, this
 metadata can reveal workflow structures, business relationships, and operational
-details. For deployments where communication pattern confidentiality matters,
-TSP optionally provides metadata-minimizing routing mechanisms.
+details. Deployments handling sensitive workflows may require metadata-minimizing
+routing mechanisms beyond what TLS provides.
 
 ### Evidence from the Field
 
-These gaps are not merely theoretical. Security researchers scanning nearly 2,000
-internet-exposed MCP servers found that all verified servers lacked any form of
-authentication. 43% of surveyed MCP servers were vulnerable to command injection.
-Academic research found 5.5% of MCP servers exhibiting tool poisoning attacks.
-The OWASP MCP Top 10 identifies confused deputy as a primary attack vector.
+These gaps are not merely theoretical. MCP, as the more widely deployed protocol,
+has attracted the most scrutiny. The OWASP MCP Top 10 identifies confused
+deputy attacks — where agents with elevated privileges execute actions on behalf
+of unauthorized callers — as a primary attack vector, a direct consequence of
+bearer-token delegation without verified sender identity. Academic research found
+5.5% of MCP servers exhibiting tool poisoning attacks through false tool
+descriptions. Scans of nearly 2,000 internet-exposed MCP servers found that all
+verified servers lacked any form of authentication.
 
 Beyond deployment observations, industry practitioners, security researchers,
 standards bodies, and academic publications have independently concluded that the
@@ -246,42 +230,27 @@ authenticated delegation is critical and that current protocols cannot provide i
 
 The gaps identified above indicate that securing AI agent communication requires
 more than adapting web-era authentication for agent protocols. A trust layer
-designed for the characteristics of autonomous agents would need to provide:
-
-- **Agent identity**: Agents need durable, self-administered, cryptographically-
-  anchored identifiers that are portable across platforms, organizations, and
-  infrastructure changes. The identity substrate must bridge heterogeneous identifier
-  systems without requiring a shared IdP or namespace, and must support agent-
-  controlled key rotation and credential binding.
-
-- **Data authenticity and provenance**: Individual messages and data artifacts must
-  carry cryptographically verifiable origin and integrity proofs bound to agent
-  identifiers, independent of the transport session, so that provenance is
-  traceable across hops, storage, and asynchronous processing.
-
-- **Secure delegation with accountability**: Delegation from human to agent, or agent
-  to sub-agent, must be cryptographically verifiable, auditable, scoped to specific
-  tasks, and independently revocable at every hop.
-
-### Why TSP
+designed for the characteristics of autonomous agents would need to provide
+durable agent identity anchored in controller-managed cryptographic keys;
+data-level authenticity and provenance
+that travels with the data rather than the session; and cryptographically
+verifiable, auditable delegation chains with independent revocation at every hop.
 
 The Trust Spanning Protocol (TSP), developed by the Trust over IP Project, is a
 message-oriented trust layer designed to address these requirements. TSP provides
 durable identity and authenticity properties across heterogeneous systems,
-anchored in long-term, self-administered, cryptographic identifiers. As long as
+anchored in long-term, controller-managed cryptographic identifiers. As long as
 endpoints use identifiers based on public key cryptography with a verifiable
 trust root, TSP ensures their messages are authentic.
 
-TSP is designed to complement, not replace, protocols such as MCP and A2A. It
-provides the trust layer these protocols currently lack by supplying:
+TSP is designed to enable, not replace, agent protocols. It provides the
+trust layer that protocols such as MCP, A2A, and their successors currently
+lack by supplying:
 
-- **Agent identity**: Durable, self-administered identifiers portable across
-  infrastructures and not bound to any single domain, IdP, or cloud provider. TSP
-  supports multiple identifier types — including DIDs, X.509, and other PKC-based
-  identifiers — bridging heterogeneous environments without requiring a shared trust
-  authority. Agents control their own cryptographic keys and can rotate them while
-  maintaining identity continuity. Stable identifiers serve as anchors for verifiable
-  credentials and peer attestations.
+- **Agent identity**: Durable, controller-managed identifiers portable across
+  infrastructures, supporting multiple identifier types without requiring a
+  shared trust authority. Key rotation preserves identity continuity, and
+  stable identifiers serve as anchors for verifiable credentials.
 
 - **Data authenticity and provenance**: Message-level signatures bound to agent
   identifiers, making data artifacts verifiable across hops and over time —
@@ -292,7 +261,7 @@ provides the trust layer these protocols currently lack by supplying:
   each hop can be independently audited and revoked. This specification defines
   delegation profiles built on these primitives.
 
-By layering MCP and A2A over TSP, their existing developer ergonomics and
+By layering agent protocols over TSP, their existing developer ergonomics and
 interoperability are preserved while the trust substrate is strengthened. Tool
 discovery, invocation, and inter-agent coordination gain durable authenticity
 and verifiable trust properties that the web stack alone does not provide.
