@@ -148,6 +148,14 @@ exhibits several well-documented problems.
   the frequency, duration, and system size of agentic workflows — leading to
   either overly broad long-lived tokens or impractical per-agent approval flows.
 
+- *Scale of autonomous coordination*: When agents number in the hundreds of
+  thousands or millions — as demonstrated by recent agent-only platforms where
+  over a million autonomous agents interact without human participation —
+  trust decisions occur at a frequency and volume that human-mediated
+  authorization cannot support. The security model must handle trust
+  establishment, verification, and revocation at machine scale, not
+  human scale.
+
 The OAuth community is actively extending the framework — Rich Authorization
 Requests (RFC 9396), DPoP (RFC 9449), Token Exchange (RFC 8693), CIBA — and
 these are meaningful improvements. However, they address individual symptoms
@@ -173,6 +181,15 @@ provenance chains. For example, when an orchestrator agent delegates a task to
 a specialist agent that invokes a tool, the orchestrator receives the
 tool result through the specialist but has no cryptographic proof that the
 result originated from the tool and was not modified in transit.
+
+For LLM-based agents, this gap is amplified: data and instructions occupy the
+same input stream. Skills, plugins, tool descriptions, and retrieved content
+are not merely data — they influence agent behavior. A malicious skill
+downloaded from a repository, a poisoned tool description, or compromised
+retrieved content can alter what the agent does. Without verified provenance,
+agents cannot distinguish trusted components from untrusted ones. The supply
+chain for agent capabilities — skills, extensions, integrations — is a data
+authenticity problem.
 
 Agents need to produce, relay, and consume data that is self-authenticating: the
 authenticity proof travels with the data, independent of session, transport, or
