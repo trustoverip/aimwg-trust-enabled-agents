@@ -267,7 +267,8 @@ lack by supplying:
 - **Agent identity**: Durable, controller-managed identifiers portable across
   infrastructures, supporting multiple identifier types without requiring a
   shared trust authority. Key rotation preserves identity continuity, and
-  stable identifiers serve as anchors for verifiable credentials.
+  stable identifiers serve as anchors for trust signals — formal credentials,
+  peer attestations, and authenticated word of mouth that accumulate over time.
 
 - **Data authenticity and provenance**: Message-level signatures bound to agent
   identifiers, making data artifacts verifiable across hops and over time —
