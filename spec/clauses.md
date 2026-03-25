@@ -15,7 +15,9 @@ Maecenas volutpat blandit aliquam etiam erat velit. Quis imperdiet massa tincidu
 
 ## TEA Agent Reference Framework
 
-As shown in the Reference Framework diagram below, we define TEA Agents as units of authorization and accountability that are identified by Verifiable Identifiers (VID) as defined in the TSP specification and further refined in this specification.
+As shown in the Reference Framework diagram below, we define TEA Agents as units of authorization and accountability that are identified by Verifiable Identifiers (VIDs) as defined in the TSP specification and further refined in this specification. TEA Agents communicate with other TEA Agents through TSP using VIDs.
+
+![TEA Agent Reference Framework](assets/tea-reference-framework.png "TEA Agent Reference Framework")
 
 TEA Agents therefore MUST have methods to guard, maintain and use the VIDs and their associated secrets, such as keys. Practically, we may refer to these methods as Wallets and Vaults. In other words, TEA Agents MUST have wallets.
 
