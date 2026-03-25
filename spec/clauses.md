@@ -13,9 +13,24 @@ Maecenas volutpat blandit aliquam etiam erat velit. Quis imperdiet massa tincidu
 
 ------------------------------------
 
-## Heading 1
+## TEA Agent Reference Framework
 
-CoLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Mi ipsum faucibus vitae aliquet nec ullamcorper sit amet. Scelerisque fermentum
+As shown in the Reference Framework diagram below, we define TEA Agents as units of authorization and accountability that are identified by Verifiable Identifiers (VID) as defined in the TSP specification and further refined in this specification.
+
+TEA Agents therefore MUST have methods to guard, maintain and use the VIDs and their associated secrets, such as keys. Practically, we may refer to these methods as Wallets and Vaults. In other words, TEA Agents MUST have wallets.
+
+TEA Agents conceptually MAY be composed of a Controller, one or more AI models (e.g. LLM and other models), and some methods of implementing Agent-scoped memories: storage of long term information. This conceptial composition is useful in understanding and implementing the TEA, but it is not strictly required. As AI technologies evolve rapidly, the common composition of AI Agents may also change. The TEA method itself however is not dependent on a particular way of agent composition. For example, a TEA does not necessarily require either an LLM or a specific type of long term memory. That being said, this composition is useful to illustrate many challenges we are solving in the TEA method.
+
+The Reference Framework diagram also captures other actors in an Agentic System which are important to define authorization and accountability. In the diagram, the "Human interfaces" box represents entities (such as an application or web browser) controlled by humans or human organizations interacting with the TEA as a "user", for example, prompting or delegating. The "Management and Control Services" box represents external control systems, for example, administrative or operational controls. The "Tools, Services, other systems" box represents any external computational services. These boxes are external entities that we may reference in defining schemes for authorization and accountability.
+
+In a TEA framework, external entities, such as a web service or a user interfacing mobile app, MAY also be TSP-Enabled. In such scenarios, these entities MAY behave just like a TEA. It is an important charactaristic of the TEA framework, the over system can expand into a network based on the common TSP layer. 
+
+The diagram also contains a box representing other AI Agents. These Agents MAY also be TEAs, or may not. When these are TEA Agents, this opens a flexible way of constructing more complex agentic systems by a group of networked TEA Agents, where the networking among them is based on TSP.
+
+Combining these elements, we may construct a TSP based network where each node is a TSP-Enabled entity. For the purpose of this specification, all these TSP-Enabled nodes are TEAs. This is illustrated in the next diagram.
+
+Finally, TEA Agents can be composite, as shown in the next diagram by a simple example. Composite TEAs are not limited to one way of composition. This diagram is only showing a simple example for illustration. When a TEA Agent is a composite Agent, there MUST be an entity (and therefore VID) representing the whole for the purpose and requirements of being a TEA Agent. This entity is overall who/what authorities are delegated to and accountability is assigned to.
+
 
 ### Heading 2
 
