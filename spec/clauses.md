@@ -4,20 +4,18 @@
 
 [//]: # (Main content {#sec:content})
 
-## Executive Summary
-CoLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Mi ipsum faucibus vitae aliquet nec ullamcorper sit amet. Scelerisque fermentum dui faucibus in ornare quam viverra orci. Maecenas ultricies mi eget mauris pharetra. Tempor nec feugiat nisl pretium fusce id. In ante metus dictum at tempor commodo ullamcorper a. Nulla at volutpat diam ut venenatis tellus in. 
 
-Quis hendrerit dolor magna eget est lorem ipsum dolor. Cursus metus aliquam eleifend mi in. Volutpat commodo sed egestas egestas fringilla phasellus. Viverra adipiscing at in tellus integer feugiat scelerisque varius. Arcu bibendum at varius vel pharetra. Dictum at tempor commodo ullamcorper. Eu consequat ac felis donec et odio pellentesque diam volutpat. Pretium quam vulputate dignissim suspendisse in est. Et pharetra pharetra massa massa ultricies mi quis hendrerit dolor. Dolor morbi non arcu risus quis varius.
 
-Maecenas volutpat blandit aliquam etiam erat velit. Quis imperdiet massa tincidunt nunc pulvinar. Placerat vestibulum lectus mauris ultrices eros in cursus turpis massa. Sodales ut etiam sit amet. Orci nulla pellentesque dignissim enim sit amet venenatis. Fusce ut placerat orci nulla pellentesque dignissim enim sit. Sollicitudin ac orci phasellus egestas tellus rutrum tellus. Enim eu turpis egestas pretium aenean pharetra magna ac placerat. Et malesuada fames ac turpis egestas. Integer quis auctor elit sed vulputate. Massa tempor nec feugiat nisl pretium.
+## TEA Reference Framework
 
-------------------------------------
+As shown in the Reference Framework diagram below [Figure 1](#tea-reference-framework), we define TEA Agents (or simply TEAs) as units of authorization and accountability that are identified by Verifiable Identifiers (VIDs) as defined in the TSP specification and further refined in this specification. TEA Agents communicate with other TEA Agents through TSP using VIDs.
 
-## TEA Agent Reference Framework
+<figure id="tea-reference-framework">
+  <img src="assets/TEA-Reference-Framework.png" alt="TEA Reference Framework" width="700">
+  <figcaption>Figure 1: TEA Reference Framework</figcaption>
+</figure>
 
-As shown in the Reference Framework diagram below, we define TEA Agents as units of authorization and accountability that are identified by Verifiable Identifiers (VIDs) as defined in the TSP specification and further refined in this specification. TEA Agents communicate with other TEA Agents through TSP using VIDs.
-
-![TEA Agent Reference Framework](assets/tea-reference-framework.png "TEA Agent Reference Framework")
+&nbsp;
 
 TEA Agents therefore MUST have methods to guard, maintain and use the VIDs and their associated secrets, such as keys. Practically, we may refer to these methods as Wallets and Vaults. In other words, TEA Agents MUST have wallets.
 
@@ -29,9 +27,23 @@ In a TEA framework, external entities, such as a web service or a user interfaci
 
 The diagram also contains a box representing other AI Agents. These Agents MAY also be TEAs, or may not. When these are TEA Agents, this opens a flexible way of constructing more complex agentic systems by a group of networked TEA Agents, where the networking among them is based on TSP.
 
-Combining these elements, we may construct a TSP based network where each node is a TSP-Enabled entity. For the purpose of this specification, all these TSP-Enabled nodes are TEAs. This is illustrated in the next diagram.
+Combining these elements, we may construct a TSP based network where each node is a TSP-Enabled entity. For the purpose of this specification, all these TSP-Enabled nodes are TEAs. This is illustrated in the next diagram [Figure 2](#tea-network).
 
-Finally, TEA Agents can be composite, as shown in the next diagram by a simple example. Composite TEAs are not limited to one way of composition. This diagram is only showing a simple example for illustration. When a TEA Agent is a composite Agent, there MUST be an entity (and therefore VID) representing the whole for the purpose and requirements of being a TEA Agent. This entity is overall who/what authorities are delegated to and accountability is assigned to.
+<figure id="tea-network">
+  <img src="assets/TEA-Network.png" alt="TEA Network" width="600">
+  <figcaption>Figure 2: TEA Network</figcaption>
+</figure>
+
+&nbsp;
+
+Finally, TEA Agents can be composite, as shown in the next diagram [Figure 3](#composite-tea) by a simple example. Composite TEAs are not limited to one way of composition. This diagram is only showing a simple example for illustration. When a TEA Agent is a composite Agent, there MUST be an entity (and therefore VID) representing the whole for the purpose and requirements of being a TEA Agent. This entity is overall who/what authorities are delegated to and accountability is assigned to.
+
+<figure id="composite-tea">
+  <img src="assets/Composite-TEA.png" alt="Composite TEA" width="400">
+  <figcaption>Figure 3: Composite TEA</figcaption>
+</figure>
+
+&nbsp;
 
 
 ### Heading 2
