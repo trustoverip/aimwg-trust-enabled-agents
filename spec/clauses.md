@@ -11,7 +11,7 @@
 As shown in the Reference Framework diagram below [Figure 1](#tea-reference-framework), we define TEA Agents (or simply TEAs) as units of authorization and accountability that are identified by Verifiable Identifiers (VIDs) as defined in the TSP specification and further refined in this specification. TEA Agents communicate with other TEA Agents through TSP using VIDs.
 
 <figure id="tea-reference-framework">
-  <img src="../assets/TEA-Reference-Framework.png" alt="TEA Reference Framework" width="700">
+  <img src="https://raw.githubusercontent.com/trustoverip/aimwg-tsp-enabled-ai-agent-protocols/main/assets/TEA-Reference-Framework.png" alt="TEA Reference Framework" width="700">
   <figcaption>Figure 1: TEA Reference Framework</figcaption>
 </figure>
 
@@ -30,7 +30,7 @@ The diagram also contains a box representing other AI Agents. These Agents MAY a
 Combining these elements, we may construct a TSP based network where each node is a TSP-Enabled entity. For the purpose of this specification, all these TSP-Enabled nodes are TEAs. This is illustrated in the next diagram [Figure 2](#tea-network).
 
 <figure id="tea-network">
-  <img src="../assets/TEA-Network.png" alt="TEA Network" width="600">
+  <img src="https://raw.githubusercontent.com/trustoverip/aimwg-tsp-enabled-ai-agent-protocols/main/assets/TEA-Network.png" alt="TEA Network" width="600">
   <figcaption>Figure 2: TEA Network</figcaption>
 </figure>
 
@@ -39,7 +39,7 @@ Combining these elements, we may construct a TSP based network where each node i
 Finally, TEA Agents can be composite, as shown in the next diagram [Figure 3](#composite-tea) by a simple example. Composite TEAs are not limited to one way of composition. This diagram is only showing a simple example for illustration. When a TEA Agent is a composite Agent, there MUST be an entity (and therefore VID) representing the whole for the purpose and requirements of being a TEA Agent. This entity is overall who/what authorities are delegated to and accountability is assigned to.
 
 <figure id="composite-tea">
-  <img src="../assets/Composite-TEA.png" alt="Composite TEA" width="400">
+  <img src="https://raw.githubusercontent.com/trustoverip/aimwg-tsp-enabled-ai-agent-protocols/main/assets/Composite-TEA.png" alt="Composite TEA" width="400">
   <figcaption>Figure 3: Composite TEA</figcaption>
 </figure>
 
