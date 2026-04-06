@@ -45,6 +45,34 @@ Finally, TEA Agents can be composite, as shown in the next diagram [Figure 3](#c
 
 &nbsp;
 
+## T-Claw Reference Implementation Flow
+
+The following sequence diagram shows how a TEA-compliant agent (T-Claw)
+processes a signed message from a peer agent:
+
+```mermaid
+sequenceDiagram
+  participant UA as User/Agent A
+  participant Hub as T-Claw Hub
+  participant Gate as TSP Gate
+  participant LLM as Agent Loop (LLM)
+
+  UA->>Hub: InboundMessage + trust_packet
+  Hub->>Gate: verify(content, trust_packet)
+  alt Signature Valid
+    Gate-->>Hub: Ok(true) ✅
+    Hub->>LLM: process_message(msg)
+    LLM-->>Hub: OutboundMessage
+    Hub->>Hub: sign(content, private_key)
+    Hub-->>UA: OutboundMessage + trust_packet
+  else Signature Invalid
+    Gate-->>Hub: Ok(false) ❌
+    Hub-->>UA: REJECTED (no LLM call)
+  end
+```
+
+Reference implementation: [T-Claw on GitHub](https://github.com/ashum9/t-claw)
+
 
 ### Heading 2
 
