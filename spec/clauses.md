@@ -17,7 +17,7 @@ As shown in the Reference Framework diagram below [Figure 1](#tea-reference-fram
 
 &nbsp;
 
-TEA Agents therefore MUST have methods to guard, maintain and use the VIDs and their associated secrets, such as keys. Practically, we may refer to these methods as Wallets and Vaults. In other words, TEA Agents MUST have wallets.
+TEA Agents therefore MUST have modules to guard, maintain and use the VIDs and their associated secrets, such as keys. Practically, we may refer to these modules as Wallets and Vaults. In other words, TEA Agents MUST have wallets.
 
 TEA Agents conceptually MAY be composed of a Controller, one or more AI models (e.g. LLM and other models), and some methods of implementing Agent-scoped memories: storage of long term information. This conceptial composition is useful in understanding and implementing the TEA, but it is not strictly required. As AI technologies evolve rapidly, the common composition of AI Agents may also change. The TEA method itself however is not dependent on a particular way of agent composition. For example, a TEA does not necessarily require either an LLM or a specific type of long term memory. That being said, this composition is useful to illustrate many challenges we are solving in the TEA method.
 
@@ -46,70 +46,71 @@ Finally, TEA Agents can be composite, as shown in the next diagram [Figure 3](#c
 &nbsp;
 
 
-### Heading 2
+## TEAs
+This section defines what agents need to do to be comformant TEAs.
 
-CoLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Mi ipsum faucibus vitae aliquet nec ullamcorper sit amet. Scelerisque fermentum dui faucibus in ornare quam viverra orci. Maecenas ultricies mi eget mauris pharetra. Tempor nec feugiat nisl pretium fusce id. In ante metus dictum at tempor commodo ullamcorper a. Nulla at volutpat diam ut venenatis tellus in. 
+A TEA is a TSP endpoint. As a TSP endpoint, the TSP specification [1[#TSP]] requires the agent MUST be secured as a distinct domain of control so that authority of operations and accountability can be uniquely assigned or attributed to a particular TEA. In the TEA Reference Framework [Figure 1](#tea-reference-framework), the agent MUST contain a Controller (or TEA Controller) that is a conformant TSP endpoint. The agent MAY also include or interact with one or more AI models, and MAY include or interact with one or more persistent memory modules.
 
-Quis hendrerit dolor magna eget est lorem ipsum dolor. Cursus metus aliquam eleifend mi in. Volutpat commodo sed egestas egestas fringilla phasellus. Viverra adipiscing at in tellus integer feugiat scelerisque varius. Arcu bibendum at varius vel pharetra. Dictum at tempor commodo ullamcorper. Eu consequat ac felis donec et odio pellentesque diam volutpat. Pretium quam vulputate dignissim suspendisse in est. Et pharetra pharetra massa massa ultricies mi quis hendrerit dolor. Dolor morbi non arcu risus quis varius.
+All context, memory access and tool use within this framework by the AI models MUST go through the Controller. 
 
+Note that an AI model served remotely by another operator may have its own context, memory or tool use outside of this framework. For the purpose of this specification, that is transparent and is considered part of the model's behavior. If required, we will explicitly state if a model is embedded within the TEA's domain of control or outside of it. Regardless, the model's access to the context, memory, tools that reside within this TEA MUST go through the Controller.
 
-### Heading 2
+The TEA Controller MUST contain a secured data store. We will refer this data store as its Wallet throughout this specification. Only the Controller has access to the Wallet. We defer the proper implementation of such wallets to [[ref:#security-and-trust-considerations]].
 
-This section describes key concepts used in the content of the document.  If the concept requires a footnote, one should be inserted as follows:  Any defined term should be hyperlinked to its glossary definition (or at least bolded).
+The TEA Controller MUST contain a TSP Gateway to send and receive TSP messages. This TEA can communicate with other TEAs or TSP endpoints with assured authenticity, message integrity, and confidentiality and potentially meta-data privacy through this TSP Gateway. All TSP messages going out or coming in MUST go through the TSP Gateway.
 
-## Heading 1
+The TEA Controller MAY have other communication channels other than the TSP Gateway. All such communication channels MUST be rigourously secured in order to prevent threats from breaching the Controller. For further discussions, please refer to [[ref:#security-and-trust-considerations]].
 
-Quis hendrerit dolor magna eget est lorem ipsum dolor. Cursus metus aliquam eleifend mi in. Volutpat commodo sed egestas egestas fringilla phasellus. Viverra adipiscing at in tellus integer feugiat scelerisque varius. Arcu bibendum at varius vel pharetra. Dictum at tempor commodo ullamcorper. Eu consequat ac felis donec et odio pellentesque diam volutpat. Pretium quam vulputate dignissim suspendisse in est. Et pharetra pharetra massa massa ultricies mi quis hendrerit dolor. Dolor morbi non arcu risus quis varius.
+The TEA Controller MUST have one or more public VIDs and MAY have additional private VIDs. It MUST designate at least one public VID as the Introduction VID (IVID) with which first time contacts can be made without prior trust relationships. It MUST also designate at least one public VID as the Authorization VID (AVID) that is used for assign authority and accountability. By default, the AVID and IVID are the same.
 
-### Heading 2
+The TEA Controller MUST implement the mandatory delegation and accountability functions as defined in this specification.
 
-Eu consequat ac felis donec et odio pellentesque diam volutpat. Pretium quam vulputate dignissim suspendisse in est. Et pharetra pharetra massa massa ultricies mi quis hendrerit dolor. Dolor morbi non arcu risus quis varius.
+### Verifiable Identifiers (VIDs)
 
+The TEA MUST use Verifiable Identifiers that are suitable for durable continuous identification. In order to meet this requirement, the VIDs MUST support key rotation and pre-rotation and allow the history of key rotations to be verifiable. TSP is interoperable with multiple VID formats but for ease of implementation and better interoperability, we prefer to choose a small number of VID schemes initially. This set MAY be extended in future.
 
-#### Heading 3
+The TEA MUST support these VIDs:
+- **did:webvh**: See https://identity.foundation/didwebvh/v1.0/ (TODO: ADD reference)
 
-CoLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Mi ipsum faucibus vitae aliquet nec ullamcorper sit amet. Scelerisque fermentum dui faucibus in ornare quam viverra orci. Maecenas ultricies mi eget mauris pharetra. Tempor nec feugiat nisl pretium fusce id. In ante metus dictum at tempor commodo ullamcorper a. Nulla at volutpat diam ut venenatis tellus in.
+The TEA MUST support the pre-rotation feature of the **did:webvh**.
 
-##### Heading 4
+## TSP Gateway
 
-Sodales ut etiam sit amet. Orci nulla pellentesque dignissim enim sit amet venenatis. Fusce ut placerat orci nulla pellentesque dignissim enim sit. Sollicitudin ac orci phasellus egestas tellus rutrum tellus. Enim eu turpis egestas pretium aenean pharetra magna ac placerat. Et malesuada fames ac turpis egestas. Integer quis auctor elit sed vulputate. Massa tempor nec feugiat nisl pretium.
+The TSP Gateway MUST support both confidential and meta-data privacy functions that are optional in TSP. It MUST also support both NaCl and HPKE-base modes.
 
-## Figures, Bullets and Numbered Lists
+## TSP Message Serializations
 
-### Figure
+The TSP protocol specifies serialization using CESR which covers the envelope and nested and routed envelopes. In addition, it also specifies a set of control messages. For the payload data of a TSP message, TEA can use either native CESR, or JSON, CBOR or MsgPak serializations. This is a very useful feature especially when we have an existing higher layer protocols that we may want to layer over TSP.
 
-Arcu bibendum at varius vel pharetra. Dictum at tempor commodo ullamcorper. Eu consequat ac felis donec et odio pellentesque diam volutpat. Pretium quam vulputate dignissim suspendisse in est. Et pharetra pharetra massa massa ultricies mi quis hendrerit dolor. Dolor morbi non arcu risus quis varius
+### TEA Signed Payload
 
+A TEA may need messages carried by TSP with a sender signature tied to one of its VIDs, for example, the AVID. Even though all TSP messages are signed in the TSP level, that signature is not usable to a third party who is not the receiver. For authorization and accountability features, a TEA will need to present proofs to such third parties.
 
-[image]: image.png "Image Title" 
-![Alt text][image] 
-A reference to the [image](#image).
+The TEA MUST implement the native signing scheme as follows:
 
-### Figure 1. Mi ipsum faucibus vitae
-
-
-### Lists
-
-Eu consequat ac felis donec et odio pellentesque diam volutpat:
-
-1. Establish Magna
-    1. Dictum at tempor commodo
-    1. Volutpat commodo sed,
-        1. Cursus metus aliquam eleifend.
+TODO: ADD signature to payload
+TODO: Should this be part of TSP spec or here?
 
 
-- Identify Bibendum,
-   - Analyze Donec,
-      - Treat Fringilla,
+## Transports
 
-### Quote
+TSP is agonostic to transport layer choices. For TEA, we are also agonostic to transport layer options but it will be more convenient in integration with other protocols or systems if we choose the same common options.
 
-The following is a quote from a referenced source:
+The TEA MUST at least support these transport options:
 
-> This is a quote from an author in a paper that provides invaluable insight into the subject of this ToIP document. Be sure to include a reference to the source.
+- **Streamable HTTP (SHTTP)**: as defined in the MCP specification (TODO: ADD reference)
+- **stdio**: as defined in the MCP specification (TODO: ADD reference)
 
-### Conclusion
+## Layering Existing Protocols over TSP as Trust Tasks
 
-CoLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Mi ipsum faucibus vitae aliquet nec ullamcorper sit amet. Scelerisque fermentum dui faucibus in ornare quam viverra orci. Maecenas ultricies mi eget mauris pharetra. Tempor nec feugiat nisl pretium fusce id. In ante metus dictum at tempor commodo ullamcorper a. Nulla at volutpat diam ut venenatis tellus in.
+TSP is designed to support higher layer protocols, called Trust Tasks, over TSP. Such trust tasks MAY be existing commonly used protocols ported over to TSP, e.g. MCP, or can be new protocols specified in one of the following sections, or in other specifications outside of this document.
 
-- This section seems incorrectly indented: https://github.com/trustoverip/specification-template/issues/1
+## MCP over TSP
+
+## Delegation of Authorization and Duty
+
+## Accountability
+
+## Security and Trust Considerations
+
+
