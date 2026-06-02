@@ -131,7 +131,7 @@ A minimal exchange is `Propose → Accept → Ack`. A flexible exchange is `Prop
  
 The following requirements apply to any conforming instantiation of the pattern:
  
-1. Every message MUST be sent over the TSP Gateway between the Initiator's VID and the Responder's VID.
+1. Every message MUST be sent over the TSP between the Initiator's VID and the Responder's VID.
 2. Each message payload MUST be carried as an Authentic Chained Data Container (ACDC), serialized as permitted in [TSP Message Serializations](#tsp-message-serializations). Where a message must be verifiable by a third party it MUST be a TEA Signed Payload (see [TEA Signed Payload](#tea-signed-payload)) tied to the sender's AVID. ACDC is the common interoperability primitive of the pattern regardless of the parties' particular pattern of negotiation — their "pattern of speech."
 3. An Accept MUST reference the specific Propose it accepts by a verifiable identifier (for example, the SAID of that Propose's container).
 4. A party MUST treat only the most recent superseding Propose as the live offer; earlier proposals in the same exchange are no longer acceptable once superseded.
@@ -194,6 +194,91 @@ Requirements:
 1. An authorization or agreement that must be accountable to a third party MUST be recorded as a TEA Signed Payload (see [TEA Signed Payload](#tea-signed-payload)) tied to the responsible party's AVID.
 2. The accountability chain of any authority a TEA holds or exercises MUST terminate in a principal — a natural person or organization — that can bear accountability. A TEA MUST NOT be the terminal responsible party for an authority.
 3. An authorization MUST NOT be inferred solely from a record that an agreement occurred; conferral of authority requires an authorization ACDC as defined in [Delegation of Authorization and Duty](#delegation-of-authorization-and-duty).
+
+## Worked Example: Delegated Service Access
+
+*This section is informative. It illustrates the preceding clauses with the simplest end-to-end scenario: a principal who authorizes an agent to use a service on the principal's behalf.*
+
+### Actors
+
+- **BookingService (S)** — the Service API and Relying Party. As the owner of the resource being accessed, S is the **root of authority** over that resource and is also the party that verifies access to it.
+- **Alice** — the **Principal**: the account holder at S and the accountable party. Alice holds `AVID_Alice`.
+- **Agent** — Alice's TEA and the **Delegate**, holding `AVID_Agent`.
+
+Because the resource owner is the natural root of authority, the chain of authority runs **S → Alice → Agent**, and every link is a uniform I2I delegation. S therefore verifies a chain that roots in its own issuance, needing no external trust anchor — which mirrors how account-based services actually work.
+
+### The authority chain
+
+**Hop 1 — `Cred_S→Alice` (root issuance).** S authorizes Alice as the holder of her account. This is the root of the chain: S owns the resource, so this issuance has no incoming authority edge.
+
+```
+Cred_S→Alice
+  i:  AVID_S                         # Issuer  = the service (root of authority)
+  a:
+    i:  AVID_Alice                   # Issuee  = Alice
+    scope:
+      resource: bookingservice:account/alice
+      ability:  [ create-booking, cancel-booking, view ]
+  r:  { account terms ... }
+  ri: <S's status registry>
+  (no authority edge — S is the root of authority over the resource)
+```
+
+**Hop 2 — `Cred_Alice→Agent` (I2I re-delegation, attenuated).** Alice re-delegates a narrowed slice to her Agent. The grant is expressed as a *restriction* relative to the parent: a smaller ability set, plus caveats and a duty.
+
+```
+Cred_Alice→Agent
+  i:  AVID_Alice                     # Issuer  = Alice
+  a:
+    i:  AVID_Agent                   # Issuee  = the Agent
+    scope:
+      resource: bookingservice:account/alice
+      ability:  [ create-booking ]   # attenuated: subset of Alice's abilities
+  r:
+    caveats: { maxAmount: 500 USD, category: [ flights ] }
+    duties:  { report: { to: AVID_Alice, on: each-booking } }
+  e:
+    auth:
+      n: <SAID of Cred_S→Alice>      # far node = the parent authority
+      o: I2I                         # Issuer(this) MUST be Issuee(parent): Alice = Alice  ✓
+  validUntil: <now + 7 days>
+  ri: <Alice's status registry>
+```
+
+### Effective authority (the meet)
+
+The Agent's effective authority is the meet (∩) along the chain:
+
+```
+  Alice's authority   : { create-booking, cancel-booking, view } on alice's account
+  ∩ Alice→Agent delta : ability ⊆ { create-booking }; amount ≤ $500; category = flights; within 7 days
+  = Agent's authority : create-booking on alice's account, ≤ $500, flights only, until T+7d
+```
+
+This is strictly ≤ Alice's authority, which is ≤ S's grant — the narrowing is intrinsic because each hop carries only a restriction. A request to book a $420 flight falls inside this set and is permitted; a $900 booking, a hotel, or a request after day 7 would not.
+
+### Runtime
+
+<figure id="delegated-access-example">
+
+<img src="https://raw.githubusercontent.com/trustoverip/aimwg-tsp-enabled-ai-agent-protocols/main/assets/tea-delegated-access-example.png" alt="Delegated service access: authority chain S to Alice to Agent" width="760">
+
+<figcaption>Figure 5: Delegated service access — authority chain S → Alice → Agent</figcaption>
+
+</figure>
+
+&nbsp;
+
+1. **Delegation.** Over their TSP channel, Alice and the Agent run the [Authenticated Exchange Protocol](#authenticated-exchange-protocol) to settle the terms; Alice's binding Ack issues `Cred_Alice→Agent` to the Agent in band.
+2. **Access.** The Agent opens an exchange with S, proposing a concrete booking (a $420 flight) and presenting the chain `{ Cred_Alice→Agent ▸ Cred_S→Alice }` as a TEA Signed Payload (see [TEA Signed Payload](#tea-signed-payload)) tied to `AVID_Agent`.
+3. **Verification.** S confirms the chain roots in its own issuance (`AVID_S`); that the I2I edge holds (Alice is the Issuee of the authority she re-delegated); that the leaf Issuee is the TSP counterparty presenting it; that the meet of the chain covers the requested operation; and that no ACDC on the chain is revoked or past its `validUntil`. S then Accepts/Acks and creates the booking.
+4. **Duty.** The Agent discharges its duty by reporting the booking to Alice as a signed payload.
+
+### What the example demonstrates
+
+- **The service is both the root and the verifier.** S validates a chain rooted in its own grant, so no external anchor is needed — the base "root issuance" case lands naturally on the resource owner, and the normative text needs no special "root principal" carve-out beyond "the chain roots in the authority that controls the resource."
+- **Re-delegation is a uniform I2I hop**, and attenuation is intrinsic: the Agent cannot exceed what Alice holds, which cannot exceed what S granted.
+- **One chain, two readings.** Read S → Agent, it is the delegation of authority; read Agent → S, it is the accountability trace, terminating in Alice — a principal, never the Agent.
 
 ## Design Rationale and Comparison
  
