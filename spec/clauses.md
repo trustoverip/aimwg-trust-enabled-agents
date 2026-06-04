@@ -19,11 +19,11 @@ As shown in the Reference Framework diagram below [Figure 1](#tea-reference-fram
 
 TEA Agents therefore MUST have modules to guard, maintain and use the VIDs and their associated secrets, such as keys. Practically, we may refer to these modules as Wallets and Vaults. In other words, TEA Agents MUST have wallets.
 
-TEA Agents conceptually MAY be composed of a Controller, one or more AI models (e.g. LLM and other models), and some methods of implementing Agent-scoped memories: storage of long term information. This conceptial composition is useful in understanding and implementing the TEA, but it is not strictly required. As AI technologies evolve rapidly, the common composition of AI Agents may also change. The TEA method itself however is not dependent on a particular way of agent composition. For example, a TEA does not necessarily require either an LLM or a specific type of long term memory. That being said, this composition is useful to illustrate many challenges we are solving in the TEA method.
+TEA Agents conceptually MAY be composed of a Controller, one or more AI models (e.g. LLM and other models), and some methods of implementing Agent-scoped memories: storage of long term information. This conceptual composition is useful in understanding and implementing the TEA, but it is not strictly required. As AI technologies evolve rapidly, the common composition of AI Agents may also change. The TEA method itself however is not dependent on a particular way of agent composition. For example, a TEA does not necessarily require either an LLM or a specific type of long term memory. That being said, this composition is useful to illustrate many challenges we are solving in the TEA method.
 
 The Reference Framework diagram also captures other actors in an Agentic System which are important to define authorization and accountability. In the diagram, the "Human interfaces" box represents entities (such as an application or web browser) controlled by humans or human organizations interacting with the TEA as a "user", for example, prompting or delegating. The "Management and Control Services" box represents external control systems, for example, administrative or operational controls. The "Tools, Services, other systems" box represents any external computational services. These boxes are external entities that we may reference in defining schemes for authorization and accountability.
 
-In a TEA framework, external entities, such as a web service or a user interfacing mobile app, MAY also be TSP-Enabled. In such scenarios, these entities MAY behave just like a TEA. It is an important charactaristic of the TEA framework, the over system can expand into a network based on the common TSP layer. 
+In a TEA framework, external entities, such as a web service or a user interfacing mobile app, MAY also be TSP-Enabled. In such scenarios, these entities MAY behave just like a TEA. It is an important characteristic of the TEA framework, the overall system can expand into a network based on the common TSP layer. 
 
 The diagram also contains a box representing other AI Agents. These Agents MAY also be TEAs, or may not. When these are TEA Agents, this opens a flexible way of constructing more complex agentic systems by a group of networked TEA Agents, where the networking among them is based on TSP.
 
@@ -59,9 +59,9 @@ The TEA Controller MUST contain a secured data store. We will refer this data st
 
 The TEA Controller MUST contain a TSP Gateway to send and receive TSP messages. This TEA can communicate with other TEAs or TSP endpoints with assured authenticity, message integrity, and confidentiality and potentially meta-data privacy through this TSP Gateway. All TSP messages going out or coming in MUST go through the TSP Gateway.
 
-The TEA Controller MAY have other communication channels other than the TSP Gateway. All such communication channels MUST be rigourously secured in order to prevent threats from breaching the Controller. For further discussions, please refer to [[ref:#security-and-trust-considerations]].
+The TEA Controller MAY have other communication channels other than the TSP Gateway. All such communication channels MUST be rigorously secured in order to prevent threats from breaching the Controller. For further discussions, please refer to [[ref:#security-and-trust-considerations]].
 
-The TEA Controller MUST have one or more public VIDs and MAY have additional private VIDs. It MUST designate at least one public VID as the Introduction VID (IVID) with which first time contacts can be made without prior trust relationships. It MUST also designate at least one public VID as the Authorization VID (AVID) that is used for assign authority and accountability. By default, the AVID and IVID are the same.
+The TEA Controller MUST have one or more public VIDs and MAY have additional private VIDs. It MUST designate at least one public VID as the Introduction VID (IVID) with which first time contacts can be made without prior trust relationships. It MUST also designate at least one public VID as the Authorization VID (AVID) that is used to assign authority and accountability. By default, the AVID and IVID are the same.
 
 The TEA Controller MUST implement the mandatory delegation and accountability functions as defined in this specification.
 
@@ -80,7 +80,7 @@ The TSP Gateway MUST support both confidential and meta-data privacy functions t
 
 ## TSP Message Serializations
 
-The TSP protocol specifies serialization using CESR which covers the envelope and nested and routed envelopes. In addition, it also specifies a set of control messages. For the payload data of a TSP message, TEA can use either native CESR, or JSON, CBOR or MsgPak serializations. This is a very useful feature especially when we have an existing higher layer protocols that we may want to layer over TSP.
+The TSP protocol specifies serialization using CESR which covers the envelope and nested and routed envelopes. In addition, it also specifies a set of control messages. For the payload data of a TSP message, TEA can use either native CESR, or JSON, CBOR or MsgPack serializations. This is a very useful feature especially when we have an existing higher layer protocols that we may want to layer over TSP.
 
 ### TEA Signed Payload
 
@@ -94,7 +94,7 @@ TODO: Should this be part of TSP spec or here?
 
 ## Transports
 
-TSP is agonostic to transport layer choices. For TEA, we are also agonostic to transport layer options but it will be more convenient in integration with other protocols or systems if we choose the same common options.
+TSP is agnostic to transport layer choices. For TEA, we are also agnostic to transport layer options but it will be more convenient in integration with other protocols or systems if we choose the same common options.
 
 The TEA MUST at least support these transport options:
 
@@ -138,8 +138,9 @@ The following requirements apply to any conforming instantiation of the pattern:
 5. **Bounding invariant.** Any message that leaves its sender exposed pending the counterparty's next action MUST carry a validity bound. A Propose MUST carry a `validUntil` bounding the time by which it may be accepted; an Accept MUST carry a `validUntil` bounding the time by which the binding Ack must be effective. An offer or acceptance MUST NOT be open-ended.
 6. **Binding by affirmation.** An Accept is provisional. The agreement binds only when the offering party's Ack is effective within the Accept's `validUntil`. If no Ack is effective within that window, the acceptance lapses and nothing is bound.
 7. Because the binding confirm necessarily follows acceptance, an Accept's `validUntil` will normally fall later than the accepted Propose's `validUntil`. An implementation MUST NOT set an Accept's `validUntil` such that no Ack could be effective within it.
-8. A Withdraw is valid only before a binding Ack. Because nothing binds until the Ack, a Withdraw that crosses an Accept or Ack in flight is resolved deterministically by Requirement 6.
-9. Timestamps used to evaluate `validUntil` MUST be the signer's own, carried in the message container, and evaluated within a defined clock-skew tolerance. The offering party's signed Ack timestamp is authoritative for the time of binding.
+8. A Withdraw never binds or un-binds an agreement; it is effective only in the absence of a valid Ack. The offering party MAY Withdraw its live Propose at any time before it emits a binding Ack. The accepting party MAY Withdraw its provisional Accept, but that Withdraw is effective only if no valid Ack exists within the Accept's validUntil; if a Withdraw and a valid Ack cross in flight, the Ack prevails and the Withdraw is void. The accepting party's exposure to this outcome is bounded by the validUntil it set on its Accept.
+9. Timestamps used to evaluate `validUntil` MUST be the signer's own, carried in the message container, and evaluated within a defined clock-skew tolerance. The offering party's signed Ack timestamp is authoritative for the time of binding. Binding is determined solely by the existence of a valid Ack within the Accept's validUntil; it does not require comparing the Ack's timestamp against any Withdraw, so no inter-party timestamp comparison is performed.
+
 > **Editor's note (binding model):** Requirements 5–9 adopt a hybrid of explicit validity bounds and affirmative (confirm-binds) binding. The alternatives — validity bounds alone, or affirmative binding alone — are discussed in [Design Rationale and Comparison](#design-rationale-and-comparison). The working group should confirm the hybrid before these are finalized.
  
 Other Trust Tasks MAY follow alternative patterns or port existing protocols over TSP (see [Layering Existing Protocols over TSP as Trust Tasks](#layering-existing-protocols-over-tsp-as-trust-tasks) and [MCP over TSP](#mcp-over-tsp)); in every case the requirement is that they run over TSP and, where third-party verifiability is needed, carry their content as TEA Signed Payloads.
@@ -164,7 +165,7 @@ An authorization ACDC uses the three ACDC sections for distinct purposes:
 Requirements:
  
 1. A delegated authority MUST be expressed as an authorization ACDC issued by the Delegator (as Issuer) to the Delegate (as Issuee), under the Delegator's AVID.
-2. The authorization ACDC MUST include an edge referencing the ACDC that establishes the Delegator's own authority, using the I2I operator (or the DI2I operator where the Delegator's identifier is itself delegated), so that the Issuer of the delegation is constrained to be the Issuee of the authority being delegated. This is the structural expression that a party may only delegate authority it holds.
+2. The authorization ACDC MUST either (a) include an edge referencing the ACDC that establishes the Delegator's own authority, using the I2I operator (or the DI2I operator where the Delegator's identifier is itself delegated), so that the Issuer of the delegation is constrained to be the Issuee of the authority being delegated; or (b) be a root issuance, in which the Issuer is the authority that controls the resource and against which the relying party roots trust, and which therefore carries no incoming authority edge.  Case (a) is the structural expression that a party may only delegate authority it holds; case (b) is the origin of that authority. A verifier MUST accept a root issuance only when it roots trust in that Issuer for the resource in question.
 3. A delegated authority MUST carry a `validUntil` validity bound and MUST be revocable through its credential status registry.
 4. Verification of a delegated authority MUST confirm, at the time of exercise, that every ACDC on the relevant chain is non-revoked and within its validity window.
 ### Attenuated Re-delegation
@@ -176,6 +177,7 @@ An authorization is modeled as a **capability object**: a *scope* (a resource an
 1. A re-delegation MUST be expressed as a *restriction* relative to its source: the re-delegating authorization ACDC carries only the additional caveats, duties, and narrowed scope introduced at that step, not an independently restated capability.
 2. The *effective authority* of any node in a delegation chain is the meet (∩) of the source authority or authorities reached through its edges with the restriction expressed at that node. Because the meet is monotone (a ∩ b ≤ a), the effective authority of any node is necessarily no more permissive than each of its sources. Strict attenuation is therefore a property of the construction: provenance is supplied by the I2I edge (Requirement 2 above) and monotonic narrowing by the restriction-only encoding.
 3. An authority MAY be composed from multiple source authorities using ACDC m-ary edge-group operators. Under an `AND` edge-group, the effective authority requires all referenced sources and is the meet across them; under an `OR` edge-group, any one valid source suffices; edge-groups MAY be nested to express arbitrary boolean combinations. The validity of a composed authority MUST be evaluated, at the time of exercise, over the live status (revocation and validity window) of each referenced source: under `AND`, revocation or expiry of any required source invalidates the composed authority; under `OR`, the authority remains valid while at least one referenced source is valid.
+
 ### Closed Capability Core and Open Policy Extension
  
 1. This specification defines a **closed capability core**: a bounded caveat/duty vocabulary and a resource/ability model whose partial order and meet are total, deterministic, and decidable. A conforming verifier MUST compute the effective authority of a delegation chain by reduction — taking the meet along the chain — using only the closed-core semantics. This reduction requires no general policy engine and yields the same result for every conforming verifier.
@@ -287,6 +289,8 @@ This is strictly ≤ Alice's authority, which is ≤ S's grant — the narrowing
 ### Negotiation and binding
  
 The Authenticated Exchange's binding model is, in effect, a peer-to-peer two-phase commit: the offering party's Ack is the commit decision. Unlike classical two-phase commit it needs no coordinator and does not block on a failed coordinator, because the `validUntil` bounds turn an unresponsive counterparty into a clean lapse rather than an indefinite hang — the same hardening production systems add to two-phase commit through presumptive-abort timeouts.
+
+Race resolution and the inconsistency window. The asymmetry between Withdraw and Ack is the same asymmetry two-phase commit draws between a participant's vote and the coordinator's decision. An Accept is a vote-commit: once cast, the accepting party honors it until its validUntil lapses, and cannot unilaterally abort a decision the offering party may still make within that window. The offering party's Ack is the commit decision, and it is supreme — a Withdraw is effective only in the absence of a valid Ack, so a Withdraw that races a binding Ack simply loses. This is what makes the resolution deterministic without a coordinator and without comparing the two parties' self-signed timestamps against each other: binding turns solely on whether a valid Ack exists within the window, a question with one answer that an adversary cannot tilt by backdating. The price is that the accepting party cannot be certain a late Withdraw will land; it may lose to an Ack already in flight. That uncertainty is exactly the residual bounded inconsistency window noted below — it is bounded by the validUntil the accepting party itself chose, and no coordinator-free commit can eliminate it.
  
 The closest market analogue is request-for-quote trading with "last look," in which a maker may reject a deal within a window after a taker hits a time-bounded quote. Last look is widely criticized because it is one-sided: it grants the maker a free option at the taker's expense. The symmetric `validUntil` on both Propose and Accept answers that critique — it bounds the offeror's confirm window the way it bounds the acceptor's offer window — so the design can be characterized as affirmative binding without the last-look asymmetry.
  
@@ -302,7 +306,7 @@ Hashed-timelock contracts (HTLCs) for atomic swaps are a closer fit on the symme
 | IPEX | Not expiry-first | grant/admit | Yes (ACDC) | Disclosure only; expiry not first-class; draft incomplete |
 | Authenticated Exchange | Symmetric `validUntil` on Propose and Accept | Affirmative Ack (confirm-binds) | Yes (ACDC-chained, portable) | Extra round-trip; clock-skew residue; binds terms, not performance |
  
-The distinctive position of the Authenticated Exchange is that it is the only one of these combining decentralized peer operation (no coordinator, certificate authority, venue, or ledger), symmetric exposure bounding, and a portable non-repudiable record verifiable after the fact. The honest costs are an extra round-trip, a residual bounded inconsistency window that no timeout-based commit can fully eliminate, and a remaining clock dependence that affirmative binding reduces but does not remove.
+The distinctive position of the Authenticated Exchange is that it is the only one of these combining decentralized peer operation (no coordinator, certificate authority, venue, or ledger), symmetric exposure bounding, and a portable non-repudiable record verifiable after the fact. The honest costs are an extra round-trip, a residual bounded inconsistency window that no timeout-based commit can fully eliminate — the window in which an accepting party's Withdraw may lose to a racing Ack, bounded by its own validUntil — and a remaining clock dependence that affirmative binding reduces but does not remove.
  
 ### Delegation and attenuation
  
