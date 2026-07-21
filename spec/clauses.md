@@ -100,7 +100,7 @@ Requirements:
 4. Where the payload's validity depends on time (for example a `validUntil`, or a key rotation in the signer's VID history), the signature MUST be evaluated against the signing VID's key state as of the signer's own timestamp, within a defined clock-skew tolerance, consistent with the timestamp rules of the [Authenticated Exchange Protocol](#authenticated-exchange-protocol).
 5. The TEA Signed Payload is **in addition to**, not a substitute for, TSP message-level signing; the presence of one does not satisfy the requirement for the other.
 
-ACDC adds essentially nothing to this scheme. Where the payload is an ACDC, the TEA Signed Payload signature is simply the ACDC's issuer signature over its SAID, produced under the issuer's AVID — no additional signature is required. Verification proceeds as above, with one addition: for an issued credential the verifier MUST also check the credential's status registry (`ri`) for non-revocation and validity, as required by [Delegation of Authorization and Duty](#delegation-of-authorization-and-duty). Thus an authorization ACDC issued under the AVID, presented with its signature attachments, *is* a TEA Signed Payload.
+ACDC adds essentially nothing to this scheme. Where the payload is an ACDC, the TEA Signed Payload signature is simply the ACDC's issuer signature over its SAID, produced under the issuer's AVID — no additional signature is required. Verification proceeds as above, with one addition: for an issued credential the verifier MUST also check the credential's status registry (`ri`) for non-revocation and validity, as required by [Delegation of Authorization and Obligation](#delegation-of-authorization-and-obligation). Thus an authorization ACDC issued under the AVID, presented with its signature attachments, *is* a TEA Signed Payload.
 
 > **Note (placement).** This scheme reuses primitives already present in TSP and the KERI/ACDC stack (self-addressing identifiers and VID-keyed signatures); it is specified here as a TEA profile binding them to the AVID and to third-party verifiability. It could be upstreamed into the TSP specification unchanged.
 
@@ -162,28 +162,30 @@ Other Trust Tasks MAY follow alternative patterns or port existing protocols ove
 
 TODO
 
-## Delegation of Authorization and Duty
+## Delegation of Authorization and Obligation
 
-A TEA confers authority on another TEA by *delegation*. A delegation conveys two things together but of different kinds: an **authority** — what the Delegate may do — and one or more **duties** — affirmative obligations the Delegate accepts in exercising it, and for which it is accountable. Both are carried in a single authorization ACDC issued by the Delegator to the Delegate.
+A TEA confers authority on another TEA by *delegation*. A delegation conveys things of two different kinds: an **authority** — what the Delegate may do — and **post-gate policy** — the obligations the Delegate accepts and the assumptions the authority rests on, settled after the act rather than at the gate. All are carried in a single authorization ACDC issued by the Delegator to the Delegate.
 
 Consistent with the [TEA Reference Framework](#tea-reference-framework), authority is delegated to, and accountability assigned to, the entity (and VID) representing the Delegate. A delegation is issued under, and verified against, the Delegator's Authorization VID (AVID).
 
-Because an authorization is itself verifiable information, a delegation can be delivered in band: the [Authenticated Exchange Protocol](#authenticated-exchange-protocol) settles the authority and the duties, and the binding act (the Ack) coincides with issuance of the authorization ACDC to the Delegate.
+Because an authorization is itself verifiable information, a delegation can be delivered in band: the [Authenticated Exchange Protocol](#authenticated-exchange-protocol) settles the authority and the accompanying policy, and the binding act (the Ack) coincides with issuance of the authorization ACDC to the Delegate.
 
 ### The intelligent-node assumption
 
-This specification assumes that TEA nodes are capable agents. The protocol provides a **common language and a communication channel** for expressing and exchanging authority and duties; it is **not** a reasoning engine and does not, by itself, evaluate the wisdom, the consistency, or the satisfiability of what the parties agree to. A TEA is assumed to evaluate, on its own and outside the scope of the protocol, the terms it accepts — including whether the duties imposed on it are mutually consistent and whether it is willing and able to bear them — just as a real-world party evaluates a contract before signing it.
+This specification assumes that TEA nodes are capable agents. The protocol provides a **common language and a communication channel** for expressing and exchanging authority and obligations; it is **not** a reasoning engine and does not, by itself, evaluate the wisdom, the consistency, or the satisfiability of what the parties agree to. A TEA is assumed to evaluate, on its own and outside the scope of the protocol, the terms it accepts — including whether the obligations imposed on it are mutually consistent and whether it is willing and able to bear them — just as a real-world party evaluates a contract before signing it.
 
-The protocol therefore mandates only two things about delegated content: that authority **attenuates** and that duties **accumulate** as delegation proceeds, and that both remain **verifiable after the fact**. Conflict resolution, penalties for non-performance, and the decision to accept in the first place are the responsibility of the parties and of the [Accountability](#accountability) layer.
+The protocol therefore mandates only two things about delegated content: that authority **attenuates** and that obligations **accumulate** as delegation proceeds, and that both remain **verifiable after the fact**. Conflict resolution, penalties for non-performance, and the decision to accept in the first place are the responsibility of the parties and of the [Accountability](#accountability) layer.
 
-### Authority and duty are different kinds of thing
+### Kinds of stated policy
 
-The two halves of a delegation answer two different questions and are handled by two different mechanisms:
+A delegation states policy of three kinds, separated by two questions: is it a **fact the authority rests on** or a **duty someone owes**; and is it **checkable at the gate** or **only knowable later**?
 
-| | answers | mechanism | direction down a chain |
-|---|---|---|---|
-| **authority** (a *capability*) | "May I?" | meet (∩) of capabilities | narrows |
-| **duties** | "What do I then owe?" | union (∪) of duty sets | grows |
+| | checkable at the gate | only knowable later |
+|---|---|---|
+| **fact the authority rests on** | **limitation** | **assumption** |
+| **duty someone owes** | — | **obligation** |
+
+The fourth cell is structurally empty: a duty required *before* acting is a precondition, and a precondition is a limitation.
 
 An **authority** is modeled as a **capability**: a triple
 
@@ -191,18 +193,27 @@ An **authority** is modeled as a **capability**: a triple
 capability = ( resource, ability, limitation )
 ```
 
-where the **resource** is *which object*, the **ability** is *which operation*, and the **limitation** is *under what limits* the operation may be exercised. All three are part of the permission boundary and all three narrow in the same direction (toward less). The authorization decision — "is a given request within authority?" — is computed **only** from the capability.
+where the **resource** is *which object*, the **ability** is *which operation*, and the **limitation** is *under what limits* the operation may be exercised. All three are part of the permission boundary and all three narrow in the same direction (toward less). The authorization decision — "is a given request within authority?" — is computed **only** from the capability, and composes by meet (∩) down a delegation chain.
 
-A **duty** is an affirmative obligation that may come due in the future. Duties ride alongside the capability; they do not enter the authorization decision. They accumulate down a delegation chain and are enforced by the accountability layer.
+**Obligations** and **assumptions** together form the **post-gate policy**. They ride alongside the capability, do not enter the authorization decision, accumulate by union (∪) down the chain, and are settled after the act.
 
-> **Distinguishing a limitation from a duty — the time test.** If a condition is decidable at the moment of exercise and *gates* the action, it is a **limitation** and belongs to the capability (the attribute section). If the obligation may come due *later*, independent of the gate, it is a **duty** (the rule section). "Consent must already exist before booking" is a limitation; "report each booking afterward" is a duty. The same verb family can fall on either side; what decides is *when it is evaluated*.
+- An **obligation** is a duty the Delegate owes — to report, notify, settle, or watch. If it is unmet, the obligor is answerable: a **breach**.
+- An **assumption** is a fact the authority rests on that the Delegate can neither control nor observe. Nobody is obliged to make it true. If it proves false the act is undermined but no one is at fault — it goes to **validity**, not breach. Assumptions are the same device as a contract's "whereas" clauses, and like those they work only because they are disclosed up front and signed.
+
+Obligations are the Delegate's exposure; assumptions are its cover. The line between them is therefore the risk allocation itself, written down and signed: stating something as an assumption retains that risk with the Delegator; stating it as an obligation places it on the Delegate.
+
+An assumption belongs only if it **conditions the authority**. If it does not bear on the grant, it does not belong in the credential.
+
+> **The time test.** A fact decidable at the moment of exercise that *gates* the action is a **limitation**. A duty that may come due *later* is an **obligation**. A fact the authority rests on that can only be known later, and that the Delegate can neither control nor observe, is an **assumption**. "Consent must already exist before booking" is a limitation; "report each booking afterward" is an obligation; "the principal had capacity to grant this" is an assumption.
+
+> **Prefer an obligation where the Delegate can observe.** If the Delegate *can* watch for a fact, do not state it as an assumption — state the duty to watch for it and act, which is an obligation. What remains an assumption is only what the Delegate can neither control nor observe.
 
 ### ACDC encoding
 
 An authorization ACDC uses the three ACDC sections for distinct purposes:
 
 - the **attribute section** (`a`) carries the **capability**: the Issuee (the Delegate), the granted resource and ability, and the limitations;
-- the **rule section** (`r`) carries the **duties** as Ricardian clauses — affirmative obligations, each with structured parameters and a SAID-committed legal rendering;
+- the **rule section** (`r`) carries the **post-gate policy**: the obligations the Delegate owes and the assumptions the authority rests on, each SAID-committed and, where useful, carrying structured parameters alongside its rendering;
 - the **edge section** (`e`) chains, via the I2I operator, to the ACDC that establishes the Delegator's own authority.
 
 ```
@@ -212,14 +223,17 @@ a:                                   # capability — the "may I?"
   ability:  [ … ]                    # omitted ⇒ inherit from parent
   limitations:                       # omitted keys ⇒ no limit on that axis
     <limitation-type>: <bound>
-r:                                   # duties — the "what do I owe?"
-  duties:
-    - t:  <duty-type>                # registry term
+r:                                   # post-gate policy
+  obligations:                       # duties the Delegate owes
+    - t:  <obligation-type>          # registry term
       to: <beneficiary VID>
-      on: <trigger>                  # the antecedent (see Duties)
+      on: <trigger>                  # the antecedent (see Obligations)
       by_when: <deadline>
       d:  <SAID of this clause>
-      l:  "<Ricardian prose>"
+      l:  "<rendering>"
+  assumptions:                       # facts the authority rests on
+    - d:  <SAID of this clause>
+      l:  "<rendering>"
 e:
   auth: { n: <parent SAID>, o: I2I } # or DI2I; absent at a root issuance
 validUntil: <ts>
@@ -253,15 +267,15 @@ All three axes narrow in the same direction:
 
 #### Restriction-only encoding and effective authority
 
-1. A re-delegation MUST be expressed as a *restriction* relative to its source: the re-delegating authorization ACDC carries only the narrowed resource/ability and the additional limitations and duties introduced at that step, not an independently restated capability.
+1. A re-delegation MUST be expressed as a *restriction* relative to its source: the re-delegating authorization ACDC carries only the narrowed resource/ability and the additional limitations and obligations introduced at that step, not an independently restated capability.
 2. The **effective capability** of any node is the meet (∩) of the source capability or capabilities reached through its edges with the restriction expressed at that node. Because the meet is monotone (`a ∩ b ≤ a`), the effective capability of any node is necessarily no more permissive than each of its sources. Strict attenuation is therefore a property of the construction: provenance is supplied by the I2I edge and monotonic narrowing by the restriction-only encoding.
-3. The **effective duty set** of any node is the union (∪) of the duties along its chain. Duties only accumulate; a re-delegation MAY add a duty but a node can never hold fewer duties than its chain imposes.
+3. The **effective obligation set** of any node is the union (∪) of the obligations along its chain. Obligations only accumulate; a re-delegation MAY add an obligation but a node can never hold fewer obligations than its chain imposes.
 
 #### Composition from multiple sources
 
 An authority MAY be composed from multiple source authorities using ACDC m-ary edge-group operators, which MAY be nested to express arbitrary boolean combinations.
 
-- Under an **`AND`** edge-group, the effective capability is the meet across all referenced sources (then met with the node's restriction), and the effective duty set is the union across all sources. At the time of exercise, revocation or expiry of any required source invalidates the composed authority.
+- Under an **`AND`** edge-group, the effective capability is the meet across all referenced sources (then met with the node's restriction), and the effective obligation set is the union across all sources. At the time of exercise, revocation or expiry of any required source invalidates the composed authority.
 - Under an **`OR`** edge-group, any one valid source suffices. `OR` is **not** a join of capabilities (a join would broaden authority and break attenuation); it is a per-request disjunction: a request is within authority iff it falls within `effective-capability(sₖ) ∩ restriction` for *some* currently-valid source `sₖ`. Each branch is reduced and attenuated independently. At the time of exercise, the composed authority remains valid while at least one referenced source is valid.
 
 ### Resources, Abilities, and Limitations
@@ -280,17 +294,17 @@ The capability axes draw their concrete values from **namespaces** and a **vocab
 
 An absent limitation-type sits at ⊤ on that axis (no constraint). The meet of two limitation maps is the per-type meet, treating absent keys as ⊤. Limitation-types are declared in the vocabulary registry (community-wide or owner-local), each declaring its identifier, value domain, the value-lattice **kind** it uses (from those defined above), ⊤ element, and canonical Ricardian template. The closed capability core is exactly the part computable against this registry. Conditions that cannot be expressed as a bound over one of the defined kinds fall to the open policy extension (see [Closed Capability Core and Open Policy Extension](#closed-capability-core-and-open-policy-extension)), which may only further restrict.
 
-> **Editor's note (scope of vocabularies):** This specification fixes the **value-lattice kinds** (the meet machinery) but deliberately does **not** enumerate the concrete resource schemes, ability vocabularies, limitation-types, or duty-types. These are *content*, supplied by namespaces at whatever altitude fits — owner-local, bilateral, community, or global standard — all coexisting and SAID-addressed. Keeping the protocol content-free is what makes it general-purpose. A small **baseline namespace** of near-universal types (e.g. a time-window limitation, generic `report`/`notify` duties) MAY be published separately as a companion document for out-of-the-box interoperability; it is not part of the core protocol. Existing capability and chained-authorization patterns in the KERI/ACDC community should be reviewed before fixing any such baseline.
+> **Editor's note (scope of vocabularies):** This specification fixes the **value-lattice kinds** (the meet machinery) but deliberately does **not** enumerate the concrete resource schemes, ability vocabularies, limitation-types, or obligation-types. These are *content*, supplied by namespaces at whatever altitude fits — owner-local, bilateral, community, or global standard — all coexisting and SAID-addressed. Keeping the protocol content-free is what makes it general-purpose. A small **baseline namespace** of near-universal types (e.g. a time-window limitation, generic `report`/`notify` obligations) MAY be published separately as a companion document for out-of-the-box interoperability; it is not part of the core protocol. Existing capability and chained-authorization patterns in the KERI/ACDC community should be reviewed before fixing any such baseline.
 
-### Duties
+### Obligations
 
-A duty is an affirmative obligation that may come due in the future (see the time test above). Duties form a set ordered by ⊇ (more duties = less permissive), with meet = union and ⊤ = the empty set; they accumulate down a chain and are enforced by the accountability layer, never by the authorization decision.
+An obligation is a duty the Delegate owes, which may come due in the future (see the time test above). Obligations form a set ordered by ⊇ (more obligations = less permissive), with meet = union and ⊤ = the empty set; they accumulate down a chain and are enforced by the accountability layer, never by the authorization decision.
 
-#### Anatomy of a duty
+#### Anatomy of an obligation
 
 | field | meaning | default |
 |---|---|---|
-| **type** (`t`) | the kind of duty, from a registry duty-type (`report`, `notify`, `pay`, `delete-after-use`, `log`, …) | — |
+| **type** (`t`) | the kind of obligation, from a registry obligation-type (`report`, `notify`, `pay`, `delete-after-use`, `log`, …) | — |
 | **obligor** | who owes it | the Issuee (the Delegate) |
 | **beneficiary** (`to`) | to whom it is owed | — |
 | **trigger** (`on`) | the antecedent that makes it due | — |
@@ -299,11 +313,11 @@ A duty is an affirmative obligation that may come due in the future (see the tim
 | **discharge** | what counts as fulfilment (see below) | a signed payload |
 | **prose** (`l`) | the Ricardian legal rendering, SAID-committed | from the type's template |
 
-The **duty-type** lives in the registry, declaring its parameter schema, trigger semantics, what constitutes a valid discharge, and a Ricardian prose template; the **duty instance** lives in the rule section `r`, binding that type to concrete parameters.
+The **obligation-type** lives in the registry, declaring its parameter schema, trigger semantics, what constitutes a valid discharge, and a Ricardian prose template; the **obligation instance** lives in the rule section `r`, binding that type to concrete parameters.
 
-#### Conditional duties
+#### Conditional obligations
 
-Duties are rarely absolute; they are conditionals of the form
+Obligations are rarely absolute; they are conditionals of the form
 
 ```
 WHEN <antecedent>  THEN  <obligation>  BY <deadline relative to the antecedent>
@@ -311,41 +325,41 @@ WHEN <antecedent>  THEN  <obligation>  BY <deadline relative to the antecedent>
 
 The `trigger` field *is* the antecedent. The protocol does not evaluate whether the antecedent holds; it makes both the antecedent and the discharge into **verifiable artifacts that link by SAID**, so that compliance becomes a matching check over the evidence trail rather than a deontic evaluation:
 
-- the **antecedent artifact** (e.g. the booking record, itself a TEA Signed Payload) proves the duty is now due;
-- the **discharge artifact** (e.g. the report) proves it was met, and MUST reference both the duty clause's SAID and the triggering artifact's SAID.
+- the **antecedent artifact** (e.g. the booking record, itself a TEA Signed Payload) proves the obligation is now due;
+- the **discharge artifact** (e.g. the report) proves it was met, and MUST reference both the obligation clause's SAID and the triggering artifact's SAID.
 
 A trigger is one of the following kinds:
 
 ```
 on:
   exercise: <ability>     # fires when this authority is exercised
-  clause:   <SAID>        # fires when another clause/duty is discharged (duty-to-duty dependency)
+  clause:   <SAID>        # fires when another clause/obligation is discharged (obligation-to-obligation dependency)
   event:    <event-type>  # fires on an externally-attested event (referenced by evidence)
   time:     <schedule>    # periodic or absolute
   standing                # continuously in force
 ```
 
-`exercise:` captures the "gated to having done it" case directly: a duty gated on exercise creates **no** obligation if the authority is never used (an unexercised authority discharges its exercise-gated duties vacuously). `clause:` lets duties depend on one another, forming a dependency graph linked by SAID; the protocol records this structure but does not reason over it. Event/exercise/clause-triggered duties verify by event-matching; a `standing` duty has no discrete antecedent and is verified by **periodic attestation** on a `time:` schedule.
+`exercise:` captures the "gated to having done it" case directly: an obligation gated on exercise creates **no** duty if the authority is never used (an unexercised authority discharges its exercise-gated obligations vacuously). `clause:` lets obligations depend on one another, forming a dependency graph linked by SAID; the protocol records this structure but does not reason over it. Event/exercise/clause-triggered obligations verify by event-matching; a `standing` obligation has no discrete antecedent and is verified by **periodic attestation** on a `time:` schedule.
 
 #### Discharge and non-performance
 
-Discharge is a TEA Signed Payload, tied to the obligor's AVID, that references the duty clause's SAID and (for event/exercise/clause triggers) the triggering artifact's SAID. Non-performance never retroactively invalidates authority that was already exercised; it leaves a verifiable gap in the accountability trace and MAY trigger revocation through the status registry for future exercises. Enforcement is by evidence and revocation, never by recomputation of the capability meet.
+Discharge is a TEA Signed Payload, tied to the obligor's AVID, that references the obligation clause's SAID and (for event/exercise/clause triggers) the triggering artifact's SAID. Non-performance never retroactively invalidates authority that was already exercised; it leaves a verifiable gap in the accountability trace and MAY trigger revocation through the status registry for future exercises. Enforcement is by evidence and revocation, never by recomputation of the capability meet.
 
 #### Consistency is the accepting party's responsibility
 
-There is a fundamental asymmetry between limitations and duties:
+There is a fundamental asymmetry between limitations and obligations:
 
 - **Limitations always compose into something satisfiable.** The meet only tightens; the worst case is ⊥ (no permission), which is still a valid state.
-- **Duties compose by union, and a union can be unsatisfiable.** Two duties may directly contradict ("delete within 24h" vs. "retain for 30 days"), or they may **deadlock** (each gated on the other via `clause:`). A deadlock is simply another form of an unsatisfiable duty set.
+- **Obligations compose by union, and a union can be unsatisfiable.** Two obligations may directly contradict ("delete within 24h" vs. "retain for 30 days"), or they may **deadlock** (each gated on the other via `clause:`). A deadlock is simply another form of an unsatisfiable obligation set.
 
-The protocol does not attempt to prevent either. Detecting a contradiction or a cycle requires semantic judgment and, in general, knowledge of the whole duty graph — which a party may not have, since a `clause:` trigger can reference a clause in another chain. Mandating such a check would therefore be a requirement parties are sometimes structurally unable to satisfy. Accordingly:
+The protocol does not attempt to prevent either. Detecting a contradiction or a cycle requires semantic judgment and, in general, knowledge of the whole obligation graph — which a party may not have, since a `clause:` trigger can reference a clause in another chain. Mandating such a check would therefore be a requirement parties are sometimes structurally unable to satisfy. Accordingly:
 
-1. Union MUST always compose structurally; an unsatisfiable duty set is **not** an authorization error.
+1. Union MUST always compose structurally; an unsatisfiable obligation set is **not** an authorization error.
 2. The only structural invariant on a `clause:` trigger is that the reference be a well-formed SAID; the protocol does not require that it resolve, that the graph be acyclic, or that the set be satisfiable.
-3. A party MAY screen the duties it can see before accepting a delegation, and SHOULD do so, but completeness is not required.
-4. An unsatisfiable duty set surfaces as an unavoidable breach in the accountability layer, borne by whoever accepted it — exactly as a party who signs a self-contradictory contract is the one in default.
+3. A party MAY screen the obligations it can see before accepting a delegation, and SHOULD do so, but completeness is not required.
+4. An unsatisfiable obligation set surfaces as an unavoidable breach in the accountability layer, borne by whoever accepted it — exactly as a party who signs a self-contradictory contract is the one in default.
 
-In short: the protocol ensures duties are *explicit, accumulating, and verifiable*; it does not ensure they are *jointly satisfiable*, and parties accept duty sets at their own responsibility.
+In short: the protocol ensures obligations are *explicit, accumulating, and verifiable*; it does not ensure they are *jointly satisfiable*, and parties accept obligation sets at their own responsibility.
 
 ### Closed Capability Core and Open Policy Extension
 
@@ -353,7 +367,7 @@ This specification deliberately separates two layers of policy that play opposit
 
 The two layers relate as **ceiling and refinement**: the closed core establishes a provable ceiling on authority; open policy can only lower it.
 
-1. This specification defines a **closed capability core**: the resource/ability/limitation model above, whose partial order and meet are total, deterministic, and decidable against the published namespaces and vocabulary registry. A conforming verifier MUST compute the effective capability of a delegation chain by reduction — taking the meet along the chain (and the union of duties along the chain) — using only the closed-core semantics. This reduction requires no general policy engine and yields the same result for every conforming verifier. This is the security/safety floor.
+1. This specification defines a **closed capability core**: the resource/ability/limitation model above, whose partial order and meet are total, deterministic, and decidable against the published namespaces and vocabulary registry. A conforming verifier MUST compute the effective capability of a delegation chain by reduction — taking the meet along the chain (and the union of obligations along the chain) — using only the closed-core semantics. This reduction requires no general policy engine and yields the same result for every conforming verifier. This is the security/safety floor.
 2. An implementation MAY — and in practice typically will — carry **open policy** in the rule section for conditions not expressible in the closed core. Open policy is carried in band, as signed Ricardian content tied to the issuer's AVID; it MAY be a formal expression in a designated policy model, or **natural-language prose**. In all cases open policy MUST only further restrict the effective authority; it MUST NOT broaden the authority computed from the closed core. Because it is evaluated *after* the closed-core meet and can only deny, the **safety of open policy comes from its position in the pipeline, not from its language** — arbitrary prose, including content authored by a counterparty, cannot escalate authority beyond the closed-core ceiling.
 
 #### The nature of open policy: attributable speech
@@ -367,7 +381,7 @@ That cost lands as a *dispute, not a vulnerability*. Because open policy is deny
 
 The binding act is **acceptance**: when a Delegate Acks a delegation carrying prose, it accepts liability to act consistently with that prose *as a reasonable party would read it*, not under an adversarial reading. The intelligent-node assumption supplies the capacity for reasonable interpretation; acceptance supplies the liability.
 
-A prose limitation and a Ricardian duty are therefore the **same kind of object** — signed prose in the rule section, evaluated by an intelligent party, enforced through accountability — differing only in *when* they are read: a limitation is a deny-gate read at exercise, a duty is an obligation read when it comes due. No separate machinery is needed for open policy; it is the Ricardian rule section doing what it was designed for.
+A prose limitation and a Ricardian obligation are therefore the **same kind of object** — signed prose in the rule section, evaluated by an intelligent party, enforced through accountability — differing only in *when* they are read: a limitation is a deny-gate read at exercise, a obligation is an obligation read when it comes due. No separate machinery is needed for open policy; it is the Ricardian rule section doing what it was designed for.
 
 Where evaluation is discretionary (prose / prompt) rather than deterministic, the evaluating party SHOULD emit a **signed decision record** tied to its AVID — what policy it evaluated, against what request, and its conclusion — so that a judgment that cannot be *reproduced* can still be *attributed*.
 
@@ -377,7 +391,7 @@ Where evaluation is discretionary (prose / prompt) rather than deterministic, th
 >
 > **Follow-on to investigate:** whether the closed-core limitation menu can be defined as a *meet-closed, decidable fragment* of an existing condition language (e.g. a restricted Cedar expression subset) so that implementations inherit that language's schema and tooling while preserving the lattice/meet semantics. This would borrow syntax and tooling, not the evaluation model. Left as future work.
 
-3. **Soundness property.** For any delegation chain, the closed capability core guarantees that no node's effective capability can exceed the capability of its root or roots, and no node's effective duty set can be smaller than the union imposed along its chain — *regardless of any open policy carried above it*, since open policy can only further restrict. This property is intended to be stated and proven as part of [Security and Trust Considerations](#security-and-trust-considerations).
+3. **Soundness property.** For any delegation chain, the closed capability core guarantees that no node's effective capability can exceed the capability of its root or roots, and no node's effective obligation set can be smaller than the union imposed along its chain — *regardless of any open policy carried above it*, since open policy can only further restrict. This property is intended to be stated and proven as part of [Security and Trust Considerations](#security-and-trust-considerations).
  
 ## Accountability
 
@@ -389,7 +403,7 @@ Requirements:
  
 1. An authorization or agreement that must be accountable to a third party MUST be recorded as a TEA Signed Payload (see [TEA Signed Payload](#tea-signed-payload)) tied to the responsible party's AVID.
 2. The accountability chain of any authority a TEA holds or exercises MUST terminate in a principal — a natural person or organization — that can bear accountability. A TEA MUST NOT be the terminal responsible party for an authority.
-3. An authorization MUST NOT be inferred solely from a record that an agreement occurred; conferral of authority requires an authorization ACDC as defined in [Delegation of Authorization and Duty](#delegation-of-authorization-and-duty).
+3. An authorization MUST NOT be inferred solely from a record that an agreement occurred; conferral of authority requires an authorization ACDC as defined in [Delegation of Authorization and Obligation](#delegation-of-authorization-and-obligation).
 
 ## Worked Example: Delegated Service Access
 
@@ -419,7 +433,7 @@ Cred_S→Alice
   (no authority edge — S is the root of authority over the resource)
 ```
 
-**Hop 2 — `Cred_Alice→Agent` (I2I re-delegation, attenuated).** Alice re-delegates a narrowed slice to her Agent. The grant is expressed as a *restriction* relative to the parent: a smaller ability set, tighter limitations, and a duty conditional on exercise.
+**Hop 2 — `Cred_Alice→Agent` (I2I re-delegation, attenuated).** Alice re-delegates a narrowed slice to her Agent. The grant is expressed as a *restriction* relative to the parent: a smaller ability set, tighter limitations, and an obligation conditional on exercise.
 
 ```
 Cred_Alice→Agent
@@ -431,8 +445,8 @@ Cred_Alice→Agent
     limitations:
       maxAmount: 500 USD             # bounded scalar  (meet = min)
       category:  [ flights ]         # membership set  (meet = ∩)
-  r:                                 # duties
-    duties:
+  r:                                 # post-gate policy
+    obligations:
       - t:  report
         to: AVID_Alice
         on: { exercise: create-booking }   # antecedent: a booking was made
@@ -460,7 +474,7 @@ The Agent's effective capability is the meet (∩) along the chain:
 
 This is strictly ≤ Alice's capability, which is ≤ S's grant — the narrowing is intrinsic because each hop carries only a restriction. A request to book a $420 flight falls inside this set and is permitted; a $900 booking, a hotel, or a request after day 7 would not.
 
-The effective duties are the union along the chain: `{ report each booking to Alice within 24h }`. Making the booking triggers the `report` duty, which the Agent discharges by a signed payload referencing the duty's SAID and the booking record; had the Agent never booked, the duty would discharge vacuously.
+The effective obligations are the union along the chain: `{ report each booking to Alice within 24h }`. Making the booking triggers the `report` obligation, which the Agent discharges by a signed payload referencing the obligation's SAID and the booking record; had the Agent never booked, the obligation would discharge vacuously.
 
 ### Runtime
 
@@ -477,7 +491,7 @@ The effective duties are the union along the chain: `{ report each booking to Al
 1. **Delegation.** Over their TSP channel, Alice and the Agent run the [Authenticated Exchange Protocol](#authenticated-exchange-protocol) to settle the terms; Alice's binding Ack issues `Cred_Alice→Agent` to the Agent in band.
 2. **Access.** The Agent opens an exchange with S, proposing a concrete booking (a $420 flight) and presenting the chain `{ Cred_Alice→Agent ▸ Cred_S→Alice }` as a TEA Signed Payload (see [TEA Signed Payload](#tea-signed-payload)) tied to `AVID_Agent`.
 3. **Verification.** S confirms the chain roots in its own issuance (`AVID_S`); that the I2I edge holds (Alice is the Issuee of the authority she re-delegated); that the leaf Issuee is the TSP counterparty presenting it; that the meet of the chain covers the requested operation; and that no ACDC on the chain is revoked or past its `validUntil`. S then Accepts/Acks and creates the booking.
-4. **Duty.** The Agent discharges its duty by reporting the booking to Alice as a signed payload.
+4. **Obligation.** The Agent discharges its obligation by reporting the booking to Alice as a signed payload.
 
 ### What the example demonstrates
 
@@ -524,7 +538,7 @@ The rationale for favouring a closed capability core in this specification is th
 
 ### Security model and assumptions
 
-This section analyzes the security of the delegation, duty, and exchange mechanisms defined above. It rests on a small number of explicit assumptions and is written against a stated set of adversaries.
+This section analyzes the security of the delegation, obligation, and exchange mechanisms defined above. It rests on a small number of explicit assumptions and is written against a stated set of adversaries.
 
 **Assumptions.**
 
@@ -533,28 +547,28 @@ This section analyzes the security of the delegation, duty, and exchange mechani
 - **VID resolution and key state are verifiable.** Verifiers can resolve counterparties' VIDs and their key/rotation history (e.g. via **did:webvh**) and reach credential status registries — with the explicit fail-closed rule when they cannot (see [Key management and freshness](#key-management-and-freshness)).
 - **Trust roots are chosen by the relying party.** Soundness bounds authority relative to a root; which roots to trust is out of scope (sound ≠ trusted).
 
-**Adversaries considered.** A manipulated or fully compromised AI *model* within a TEA; a malicious *counterparty* TEA (issuing abusive duties, presenting forged or stolen chains, racing Withdraws against Acks); a *network adversary* (observing, blocking, replaying); *key compromise* of a VID; and a *thief* in possession of credential bytes. Compromise of a TEA's own Controller/Wallet is out of scope as noted above.
+**Adversaries considered.** A manipulated or fully compromised AI *model* within a TEA; a malicious *counterparty* TEA (issuing abusive obligations, presenting forged or stolen chains, racing Withdraws against Acks); a *network adversary* (observing, blocking, replaying); *key compromise* of a VID; and a *thief* in possession of credential bytes. Compromise of a TEA's own Controller/Wallet is out of scope as noted above.
 
-The guarantees are organized as: the structural core (soundness and model containment), the binding of authority to identity (holder binding), the freshness and key-management discipline, the residual risks of the open-policy/duty/exchange mechanisms, privacy considerations, and a consolidated list of residual limitations.
+The guarantees are organized as: the structural core (soundness and model containment), the binding of authority to identity (holder binding), the freshness and key-management discipline, the residual risks of the open-policy/obligation/exchange mechanisms, privacy considerations, and a consolidated list of residual limitations.
 
 ### Soundness of the delegation model
 
-The closed capability core provides two guarantees that together are the security foundation of delegation: **authority never escalates** as it is delegated, and **duties never disappear**. Stated plainly:
+The closed capability core provides two guarantees that together are the security foundation of delegation: **authority never escalates** as it is delegated, and **obligations never disappear**. Stated plainly:
 
 - No TEA, anywhere in a delegation chain, can hold more authority than the root that originated it granted.
-- No TEA can hold fewer duties than the chain leading to it imposed.
+- No TEA can hold fewer obligations than the chain leading to it imposed.
 
 Both are properties of *construction*, not of after-the-fact checking, and that distinction is what makes them strong.
 
 **Why authority cannot escalate.** A re-delegation never restates a capability from scratch; it carries only a *restriction* — a narrowing applied to the authority it inherited. A verifier computes a node's effective capability as the *meet* (the intersection) of the parent's authority with that restriction. Because a meet can only be as permissive as each of its inputs, every hop is necessarily at most as permissive as the one above it; following the chain up to its root, no node can exceed the root's grant. The narrowing is therefore intrinsic: it happens because of how effective authority is *computed*, not because someone audits each step.
 
-**Robustness to a dishonest delta.** A useful consequence is that the encoding cannot be gamed by overstating a restriction. Suppose a re-delegating TEA writes a restriction naming more than it holds — claiming, say, every ability rather than the subset it was granted. It gains nothing: the meet with its parent discards anything the parent did not have, so the overstated claim collapses back to the parent's authority. Escalation by writing a generous delta is simply not expressible. The dual holds for duties — omitting an inherited duty from a delta cannot remove it, because the effective duty set is the union along the chain.
+**Robustness to a dishonest delta.** A useful consequence is that the encoding cannot be gamed by overstating a restriction. Suppose a re-delegating TEA writes a restriction naming more than it holds — claiming, say, every ability rather than the subset it was granted. It gains nothing: the meet with its parent discards anything the parent did not have, so the overstated claim collapses back to the parent's authority. Escalation by writing a generous delta is simply not expressible. The dual holds for obligations — omitting an inherited obligation from a delta cannot remove it, because the effective obligation set is the union along the chain.
 
 **Why the chain itself is trustworthy.** Algebra alone bounds authority only if the chain is genuine: a TEA must not be able to graft its delegation onto authority it was never given. This is enforced by the I2I edge — a delegation is valid only when its issuer is the party to whom the parent authority was issued. So each hop provably descends from authority the issuer actually held, and the "meet with the parent" is a meet with the issuer's *own* received authority, never someone else's. Provenance (I2I) and narrowing (the meet) together give the guarantee.
 
-**Composition from several sources (AND).** When an authority draws on more than one source under an AND-group, its effective authority is the meet across *all* of them. It is therefore at most as permissive as each source, and the no-escalation property holds against every one of its roots simultaneously; its duties are the union across all sources.
+**Composition from several sources (AND).** When an authority draws on more than one source under an AND-group, its effective authority is the meet across *all* of them. It is therefore at most as permissive as each source, and the no-escalation property holds against every one of its roots simultaneously; its obligations are the union across all sources.
 
-**Composition under alternatives (OR).** Where any one of several sources suffices, there is no single combined authority; each alternative is evaluated on its own. A request is permitted if it lies within the authority of *some* currently-valid source. Because each alternative is independently a sound chain bounded by its own root, no alternative can escalate — and therefore neither can their disjunction: whichever source is invoked, the exercise is bounded by that source's root, and the duties owed are those accumulated along that source's chain.
+**Composition under alternatives (OR).** Where any one of several sources suffices, there is no single combined authority; each alternative is evaluated on its own. A request is permitted if it lies within the authority of *some* currently-valid source. Because each alternative is independently a sound chain bounded by its own root, no alternative can escalate — and therefore neither can their disjunction: whichever source is invoked, the exercise is bounded by that source's root, and the obligations owed are those accumulated along that source's chain.
 
 **Open policy cannot breach the floor.** Any open policy — prose or formal — is evaluated *after* the closed-core authority is computed and can only *deny*. It removes requests from the authorized set; it never adds any. So the ceiling established by the closed core holds regardless of what is written above it: no expressive policy, and no manipulation of one, can grant authority the chain did not.
 
@@ -563,7 +577,7 @@ Both are properties of *construction*, not of after-the-fact checking, and that 
 - *Sound is not the same as trusted.* Soundness says a node's authority never exceeds its root's; it does not say the root is one you should believe. Deciding which roots to trust is the relying party's responsibility and is out of scope.
 - *It is conditional on verification.* The guarantee holds only for well-formed chains — every link's I2I edge checked, every signature valid, nothing revoked, everything within its validity window at the time of exercise. A verifier that omits these checks is owed nothing.
 - *It bounds authority, not behavior.* Soundness limits what a credential can express. Limiting what an agent can *do* within that envelope — even when its reasoning is manipulated — is the separate property of model containment (see B.2).
-- *For duties, it bounds accumulation, not fulfilment.* The chain determines which duties are owed; whether they are discharged is a matter for the accountability layer.
+- *For obligations, it bounds accumulation, not fulfilment.* The chain determines which obligations are owed; whether they are discharged is a matter for the accountability layer.
 
 A formal statement of both theorems, with proofs, is given in [Appendix: Soundness](#appendix-soundness-formal-statement-and-proofs).
 
@@ -580,7 +594,7 @@ This is a deliberate inversion of where trust is placed: **the design does not a
 
 Together they form an unbroken chain — root grant → (soundness) effective capability → (containment) actual behavior — so an agent's real-world reach is provably no larger than what some accountable principal deliberately conferred.
 
-Attenuation is what makes this guarantee *tight* rather than merely finite. Because capabilities are delegated least-privilege — narrowed at every hop to exactly what the task needs — the bounded envelope under full model compromise is *small*, not just non-infinite. The value of attenuation is realized precisely in the worst case: a thoroughly compromised agent that holds only a narrow capability can do only narrow harm. And whatever it does within those bounds is still non-repudiably recorded and still accrues its duties (see [Accountability](#accountability)), so even contained misbehavior is attributable after the fact.
+Attenuation is what makes this guarantee *tight* rather than merely finite. Because capabilities are delegated least-privilege — narrowed at every hop to exactly what the task needs — the bounded envelope under full model compromise is *small*, not just non-infinite. The value of attenuation is realized precisely in the worst case: a thoroughly compromised agent that holds only a narrow capability can do only narrow harm. And whatever it does within those bounds is still non-repudiably recorded and still accrues its obligations (see [Accountability](#accountability)), so even contained misbehavior is attributable after the fact.
 
 The honest premise is that **the trust boundary is the Controller, not the model.** Containment holds while the Controller is intact; a compromise of the Controller itself (and thus the Wallet and TSP Gateway) is a different and higher bar, which is why this specification requires the Controller to be a secured, distinct domain of control with sole access to the Wallet and rigorously secured non-TSP channels (see [TEAs](#teas)). Containment converts the problem of trusting an unbounded, foolable intelligence into the much smaller problem of protecting a well-defined enforcement boundary.
 
@@ -613,7 +627,7 @@ The layers are complementary: identity authentication raises the bar and provide
 
 **The replay loop is also closed by TSP.** TSP provides per-message authenticity, integrity, confidentiality, and ordering. A passive observer cannot capture and replay a presentation: it cannot read the confidential channel, cannot authenticate as the holder, and cannot forge the VID. Cross-service replay fails for an additional reason — the chain roots in a specific resource owner and will not verify against a different one. So holder binding and TSP channel security together close the replay loops that bearer-token systems must patch with nonces or proof-of-possession tokens.
 
-> **Note (no loops in the authority graph).** "Loops" in the other sense — cyclic delegation — cannot arise either. Authority edges reference their parent by SAID (a content hash), and nothing can reference a container that does not yet exist, so the delegation graph is acyclic by construction. (This is distinct from duty `clause:` triggers, which may reference clauses in other chains and were therefore handled separately under [Duties](#duties).)
+> **Note (no loops in the authority graph).** "Loops" in the other sense — cyclic delegation — cannot arise either. Authority edges reference their parent by SAID (a content hash), and nothing can reference a container that does not yet exist, so the delegation graph is acyclic by construction. (This is distinct from obligation `clause:` triggers, which may reference clauses in other chains and were therefore handled separately under [Obligations](#obligations).)
 
 **Honest scope.** Holder binding ties exercise to the legitimate keyholder; it does not defend against a *compromised* holder — one whose VID keys are stolen, or whose Controller is breached. That case collapses to the Controller trust boundary of [Model containment](#model-containment) and to key management below; key rotation and pre-rotation limit the damage of key compromise.
 
@@ -635,7 +649,7 @@ Because keys rotate, a signature MUST be evaluated against the key state that wa
 
 #### Freshness: revocation and validity windows
 
-A credential carries two independent expiry mechanisms, and both MUST be checked **at the time of exercise**, for **every** ACDC on the chain (per [Delegation](#delegation-of-authorization-and-duty) Req 4):
+A credential carries two independent expiry mechanisms, and both MUST be checked **at the time of exercise**, for **every** ACDC on the chain (per [Delegation](#delegation-of-authorization-and-obligation) Req 4):
 
 - a **`validUntil`** bound, fixed at issuance — a static ceiling on lifetime; and
 - **revocation** through the credential status registry (`ri`) — a dynamic signal that the authority has been withdrawn early (key compromise, ended relationship, completed task).
@@ -654,16 +668,16 @@ The Wallet holds the VID secrets, and only the Controller may access it. It foll
 
 Even under key compromise, recovery and accountability remain: the controller rotates to its pre-committed key and revokes affected credentials (rotate-and-revoke), which bounds forward damage; and anything the attacker did while holding the key was done under the legitimate VID and is therefore non-repudiably attributable to the TEA through the [Accountability](#accountability) layer — a recorded harm, not a deniable one.
 
-### Open policy and duty risks
+### Open policy and obligation risks
 
-The risks of the open-policy and duty mechanisms are mostly established where those mechanisms are defined; they are gathered here for the threat reader.
+The risks of the open-policy and obligation mechanisms are mostly established where those mechanisms are defined; they are gathered here for the threat reader.
 
 - **Open policy cannot escalate.** Open policy is evaluated after the closed-core meet and can only deny; its safety comes from position in the pipeline, not its language (see [Closed Capability Core and Open Policy Extension](#closed-capability-core-and-open-policy-extension)). Prompt injection into a *carried* prose policy is therefore bounded to a *denial of restriction* — at worst the policy fails to add its intended limit — and can never grant authority beyond the closed-core ceiling.
 - **Discretionary evaluation is non-deterministic.** Prose/prompt evaluation is not reproducible across verifiers or runs. This is acceptable precisely because open policy is deny-only — divergence yields inconsistent *denials*, never inconsistent grants above the ceiling — and it is made accountable by the signed decision record (attributable though not reproducible).
 - **Interpretation gaps are disputes, not vulnerabilities.** A difference in reading a prose clause resolves as a dispute in the accountability layer under a reasonable-interpretation standard, not as a security hole; the binding act is acceptance.
-- **Unsatisfiable duty sets.** The protocol guarantees duties are explicit, accumulating, and verifiable — not that they are jointly satisfiable. Contradictions and dependency cycles are the same class of defect and are the accepting party's responsibility; an unsatisfiable set surfaces as an unavoidable breach in accountability, not an authorization error (see [Duties](#duties)). The only structural invariant on a `clause:` trigger is that the reference be a well-formed SAID.
-- **Duty non-performance** never retroactively alters authority already exercised; it leaves a verifiable gap in the accountability trace and MAY trigger revocation for future exercises.
-- **Abusive or malicious duties** are not prevented by the protocol. The intelligent-node assumption places the burden on the delegate to evaluate duties before accepting; acceptance is the assumption of liability. The protocol does not protect a node from its own acceptance decisions.
+- **Unsatisfiable obligation sets.** The protocol guarantees obligations are explicit, accumulating, and verifiable — not that they are jointly satisfiable. Contradictions and dependency cycles are the same class of defect and are the accepting party's responsibility; an unsatisfiable set surfaces as an unavoidable breach in accountability, not an authorization error (see [Obligations](#obligations)). The only structural invariant on a `clause:` trigger is that the reference be a well-formed SAID.
+- **Obligation non-performance** never retroactively alters authority already exercised; it leaves a verifiable gap in the accountability trace and MAY trigger revocation for future exercises.
+- **Abusive or malicious obligations** are not prevented by the protocol. The intelligent-node assumption places the burden on the delegate to evaluate obligations before accepting; acceptance is the assumption of liability. The protocol does not protect a node from its own acceptance decisions.
 
 ### Authenticated Exchange security
 
@@ -678,7 +692,7 @@ The risks of the open-policy and duty mechanisms are mostly established where th
 
 - **A TEA Signed Payload is intentionally not receiver-private.** Its purpose is transferable, third-party-verifiable proof, so presenting authorization or accountability content necessarily discloses authorship and content to the verifying third party. This is a deliberate trade against the metadata-privacy that TSP otherwise provides for transport.
 - **Disclose the minimum.** A presenter SHOULD present only the portion of the delegation chain required for the decision at hand, avoiding unnecessary exposure of the wider delegation graph.
-- **Selective and graduated disclosure.** ACDC's selective-disclosure facilities SHOULD be used to reveal only the attributes, limitations, and duties a verifier needs, and to reference other nodes by commitment where full content is not required — limiting exposure of sensitive business terms in limitations and duties to the intended verifier.
+- **Selective and graduated disclosure.** ACDC's selective-disclosure facilities SHOULD be used to reveal only the attributes, limitations, and obligations a verifier needs, and to reference other nodes by commitment where full content is not required — limiting exposure of sensitive business terms in limitations and obligations to the intended verifier.
 - **Correlation and VID role.** Reuse of a single AVID across many verifiers enables correlation of a TEA's activities — an inherent cost of accountability, since the AVID is *meant* to be linkable for that purpose. Where unlinkability matters, a TEA SHOULD use distinct or private VIDs (the specification permits additional private VIDs) for interactions that do not require AVID-tied accountability, trading linkability against privacy per VID role (IVID / AVID / private VIDs).
 - **Confidentiality of content in transit.** Presenting over a confidential TSP channel to the specific verifier limits exposure of chain content to the intended party; the verifier necessarily learns what it must to decide.
 
@@ -691,7 +705,7 @@ Collected here, honestly, are the residual risks this design bounds but does not
 3. **Residual clock dependence** — reduced by affirmative binding and skew tolerance, not removed.
 4. **Containment depends on Controller/Wallet integrity** — the trust boundary; its compromise is full TEA compromise.
 5. **Discretionary open-policy evaluation is not reproducible** — attributable only; interpretation gaps become disputes.
-6. **Duty satisfiability is not guaranteed** — the accepting party's responsibility; defects surface in accountability.
+6. **Obligation satisfiability is not guaranteed** — the accepting party's responsibility; defects surface in accountability.
 7. **Fail-closed trades availability for safety** — status/resolver outages produce denials.
 8. **Injection via unauthenticated content is not prevented at the identity layer** — only contained and attributable.
 9. **AVID correlation/linkability** — the privacy cost of accountability; mitigated by VID role separation.
@@ -703,9 +717,9 @@ Collected here, honestly, are the residual risks this design bounds but does not
 
 Let the capability lattice be `L = R × A × M` (resource × ability × limitation), the product of three bounded meet-semilattices. `L` inherits component-wise a partial order `≤` (reflexive, transitive), a meet `∩` that is a greatest lower bound (`x ∩ y ≤ x` and `x ∩ y ≤ y` for all `x, y`), and a top `⊤` that is the identity for meet (`x ∩ ⊤ = x`).
 
-A delegation graph is a set of authorization-ACDC nodes. Each node `n` carries a local restriction `r(n) ∈ L` (omitted axes = `⊤`) and a duty delta `d(n)` (a set; omitted = `∅`). A node is a **root** if it has no authority edge.
+A delegation graph is a set of authorization-ACDC nodes. Each node `n` carries a local restriction `r(n) ∈ L` (omitted axes = `⊤`) and an obligation delta `d(n)` (a set; omitted = `∅`). A node is a **root** if it has no authority edge.
 
-Effective capability `E(n)` and effective duty set `D(n)` for the single-parent and AND cases:
+Effective capability `E(n)` and effective obligation set `D(n)` for the single-parent and AND cases:
 
 ```
 root ρ:         E(ρ) = r(ρ)                 D(ρ) = d(ρ)
@@ -727,7 +741,7 @@ In a well-formed graph, for every node `n` and every root `ρ` reachable from `n
 
 *Proof.* Induction on the path length from `n` to `ρ`. Base (`n = ρ`): `E(n) = E(ρ)` by reflexivity. Step: by the Lemma `E(n) ≤ E(p)` for the parent `p` on the path, and by the induction hypothesis `E(p) ≤ E(ρ)`; transitivity gives `E(n) ≤ E(ρ)`. Since `E(ρ) = r(ρ)` is exactly the grant the resource owner made at the root, no chain can manufacture authority the owner did not confer. ∎
 
-### A.4 Theorem 2 (Duty Accumulation — no shedding)
+### A.4 Theorem 2 (Obligation Accumulation — no shedding)
 
 In a well-formed graph, for every node `n` and every root `ρ` on a required path, `D(n) ⊇ D(ρ)`.
 
@@ -735,7 +749,7 @@ In a well-formed graph, for every node `n` and every root `ρ` on a required pat
 
 ### A.5 Corollary (robustness to a dishonest delta)
 
-A node gains nothing by overstating its restriction or omitting inherited duties. If `r(n)` names more than the parent holds, `E(n) = E(p) ∩ r(n) ≤ E(p)` regardless (the meet discards the excess); if `d(n)` omits a parent duty, `D(n) = D(p) ∪ d(n) ⊇ D(p)` regardless. Attenuation is thus intrinsic: `E` and `D` are *computed* by meet and union, never read from a node's own claim.
+A node gains nothing by overstating its restriction or omitting inherited obligations. If `r(n)` names more than the parent holds, `E(n) = E(p) ∩ r(n) ≤ E(p)` regardless (the meet discards the excess); if `d(n)` omits a parent obligation, `D(n) = D(p) ∪ d(n) ⊇ D(p)` regardless. Attenuation is thus intrinsic: `E` and `D` are *computed* by meet and union, never read from a node's own claim.
 
 ### A.6 Extension (OR-composition)
 
@@ -745,7 +759,7 @@ Under an OR-group `{p₁..pₖ}`, a node has no single effective capability; eac
 branch j:  E(n)|ⱼ = E(pⱼ) ∩ r(n)        D(n)|ⱼ = D(pⱼ) ∪ d(n)
 ```
 
-A request `q` is authorized at `n` iff there exists a currently-valid branch `j` with `q ≤ E(n)|ⱼ`; the duties owed for that exercise are `D(n)|ⱼ`.
+A request `q` is authorized at `n` iff there exists a currently-valid branch `j` with `q ≤ E(n)|ⱼ`; the obligations owed for that exercise are `D(n)|ⱼ`.
 
 *Claim.* Every admissible exercise is bounded by the root of its branch, and no escalation is introduced by the disjunction.
 
