@@ -396,6 +396,7 @@ Where evaluation is discretionary (prose / prompt) rather than deterministic, th
 > **Non-normative note (expression languages).** Established analyzable policy languages — **Cedar**, **Biscuit**, OPA/Rego, Datalog and others — are reasonable candidates for expressing computed limitations, used through a conforming profile as described under [Resources, Abilities, and Limitations](#resources-abilities-and-limitations). This specification commits to none of them, and the names here are illustrative rather than a recommendation. Note what a profile does and does not supply: such a language contributes *syntax and tooling*, never semantics. A general policy engine evaluates a flat, typically centrally-administered policy set and re-checks attenuation on each exercise; the closed core instead makes attenuation *intrinsic* to a chained delegation and supports a soundness result. Using a language through a profile therefore lets an implementation keep its existing parsers, editors and test tooling while the meet remains the specification's.
 
 3. **Soundness property.** For any delegation chain, the closed capability core guarantees that no node's effective capability can exceed the capability of its root or roots, and no node's effective obligation set can be smaller than the union imposed along its chain — *regardless of any interpreted policy carried alongside it*, since an interpreted limitation can only narrow further. This property is intended to be stated and proven as part of [Security and Trust Considerations](#security-and-trust-considerations).
+4. **Expressiveness.** Soundness bounds what a chain may express relative to its root; it is not a claim about what can be said. Separately, this specification is **complete relative to the supplied vocabulary**: any policy decidable at the gate can be expressed as a capability, because the vocabulary it ranges over is namespace-supplied and unrestricted by this specification. Anything unexpressible is unexpressed by an author's choice, never excluded by the framework.
  
 ## Accountability
 
@@ -582,6 +583,9 @@ Both are properties of *construction*, not of after-the-fact checking, and that 
 - *It is conditional on verification.* The guarantee holds only for well-formed chains — every link's I2I edge checked, every signature valid, nothing revoked, everything within its validity window at the time of exercise. A verifier that omits these checks is owed nothing.
 - *It bounds authority, not behavior.* Soundness limits what a credential can express. Limiting what an agent can *do* within that envelope — even when its reasoning is manipulated — is the separate property of model containment (see B.2).
 - *For obligations, it bounds accumulation, not fulfilment.* The chain determines which obligations are owed; whether they are discharged is a matter for the accountability layer.
+- *It bounds what can be exceeded, not what can be said.* Soundness is not a completeness claim. Separately, the model is **complete relative to the supplied vocabulary**: anything decidable at the gate can be expressed as a capability, since the vocabulary is namespace-supplied and unrestricted here. What cannot be expressed is what an author chose not to say.
+
+These guarantees are stated over the capability lattice rather than over any syntax, so they transfer unchanged to any expression language admitted through a conforming profile.
 
 A formal statement of both theorems, with proofs, is given in [Appendix: Soundness](#appendix-soundness-formal-statement-and-proofs).
 
@@ -777,3 +781,26 @@ An interpreted limitation `O(n)` is a narrowing filter evaluated at exercise. Th
 
 - **I2I provenance** makes well-formedness cryptographically real. The algebra of A.2–A.4 bounds authority only relative to the *declared* parents; `Issuer(n) = Issuee(p)` is what guarantees a node can only build on authority issued to it, so the declared parent is the real one. Without it the theorems are vacuous.
 - **Restriction-only encoding** forces `E(n)` to be *defined* as `E(p) ∩ r(n)`. Because the meet is the only route to a node's capability, monotonicity (and hence A.5) is unavoidable rather than a property to be audited.
+
+### A.9 Conformance over expression languages
+
+The theorems above are stated over the capability lattice `L`, never over a syntax. A named syntactic profile supplies a mapping `⟦·⟧` from expressions in its fragment into `L`. Because `E(n)` and `D(n)` are defined by meet and union in `L`, and the proofs use only the lattice properties, the guarantees transfer unchanged to any language admitted through a conforming profile.
+
+Two conditions are required of a profile, and they are what *conforming* means:
+
+- **Totality** — every expression in the fragment denotes some element of `L`.
+- **Determinism** — `⟦e⟧` is a fixed element of `L`, identical for every verifier. In particular a denotation MUST NOT depend on verifier-local state; otherwise the meet is not well-defined and conforming verifiers cease to agree.
+
+Monotonicity of the language is **not** required. `E(n) = E(p) ∩ ⟦r(n)⟧ ≤ E(p)` holds whatever `⟦r(n)⟧` denotes, so an expression attempting to broaden is discarded by the meet (A.5). A profile must guarantee that a denotation exists and is fixed, not that it narrows.
+
+Soundness is therefore a **conformance result**: any language admitted through a conforming profile inherits Theorems 1 and 2 without further proof.
+
+### A.10 Relative completeness
+
+Soundness and completeness are separate claims, and the theorems above establish only the first.
+
+*Claim.* For any policy decidable at the gate — decidable from the credential chain and the request alone, identically for every verifier — there is a capability expressing it.
+
+*Argument.* A decidable gate policy `P` partitions requests into permitted and not; write `S_P` for the permitted set. The author names the terms `P` ranges over in a namespace and writes `P` in a conforming profile; a verifier then evaluates it, and nothing is left over. A counterexample could arise only if this specification restricted the available vocabulary. It does not: vocabulary is namespace-supplied and deliberately out of scope. ∎
+
+*Consequence.* The model is **sound, and complete relative to the supplied vocabulary** — relative completeness in the familiar sense, as a program logic is complete relative to the expressiveness of its assertion language. Here the qualifier costs nothing, since the thing completeness is relative to is out of scope by design: anything unexpressible is unexpressed by an author's choice, never excluded by the framework.
