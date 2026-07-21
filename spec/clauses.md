@@ -170,9 +170,9 @@ Consistent with the [TEA Reference Framework](#tea-reference-framework), authori
 
 Because an authorization is itself verifiable information, a delegation can be delivered in band: the [Authenticated Exchange Protocol](#authenticated-exchange-protocol) settles the authority and the accompanying policy, and the binding act (the Ack) coincides with issuance of the authorization ACDC to the Delegate.
 
-### The intelligent-node assumption
+### The intelligent agent assumption
 
-This specification assumes that TEA nodes are capable agents. The protocol provides a **common language and a communication channel** for expressing and exchanging authority and obligations; it is **not** a reasoning engine and does not, by itself, evaluate the wisdom, the consistency, or the satisfiability of what the parties agree to. A TEA is assumed to evaluate, on its own and outside the scope of the protocol, the terms it accepts — including whether the obligations imposed on it are mutually consistent and whether it is willing and able to bear them — just as a real-world party evaluates a contract before signing it.
+This specification assumes that TEA agents are capable. The protocol provides a **common language and a communication channel** for expressing and exchanging authority and obligations; it is **not** a reasoning engine and does not, by itself, evaluate the wisdom, the consistency, or the satisfiability of what the parties agree to. A TEA is assumed to evaluate, on its own and outside the scope of the protocol, the terms it accepts — including whether the obligations imposed on it are mutually consistent and whether it is willing and able to bear them — just as a real-world party evaluates a contract before signing it.
 
 The protocol therefore mandates only two things about delegated content: that authority **attenuates** and that obligations **accumulate** as delegation proceeds, and that both remain **verifiable after the fact**. Conflict resolution, penalties for non-performance, and the decision to accept in the first place are the responsibility of the parties and of the [Accountability](#accountability) layer.
 
@@ -385,7 +385,7 @@ That cost lands as a *dispute, not a vulnerability*. Because an interpreted limi
 - **At exercise**, the party making the access decision interprets the prose reasonably and decides; deny-only keeps this safe regardless of how it reads.
 - **At accountability**, the signed prose is the evidence, and any dispute over its meaning resolves in the accountability layer — ultimately by humans, under a reasonable-interpretation standard, as contract ambiguity has always been resolved.
 
-The binding act is **acceptance**: when a Delegate Acks a delegation carrying prose, it accepts liability to act consistently with that prose *as a reasonable party would read it*, not under an adversarial reading. The intelligent-node assumption supplies the capacity for reasonable interpretation; acceptance supplies the liability.
+The binding act is **acceptance**: when a Delegate Acks a delegation carrying prose, it accepts liability to act consistently with that prose *as a reasonable party would read it*, not under an adversarial reading. The intelligent agent assumption supplies the capacity for reasonable interpretation; acceptance supplies the liability.
 
 An interpreted limitation and an interpreted obligation are therefore the **same kind of content** — signed, committed, read by a capable party, enforced through accountability — differing only in *when* they are read: a limitation is read at exercise and gates the act; an obligation is read when it comes due. No separate machinery is needed for interpreted policy; it is the attribute and rule sections carrying content that happens to be judged rather than computed.
 
@@ -546,7 +546,7 @@ This section analyzes the security of the delegation, obligation, and exchange m
 
 **Assumptions.**
 
-- **Intelligent nodes.** TEA nodes are capable agents that evaluate what they accept; the protocol supplies a common language and channel, not a reasoning engine (see [The intelligent-node assumption](#the-intelligent-node-assumption)). The protocol does not protect a node from its own bad acceptance decisions.
+- **Intelligent agents.** TEA agents are capable and evaluate what they accept; the protocol supplies a common language and channel, not a reasoning engine (see [The intelligent agent assumption](#the-intelligent-agent-assumption)). The protocol does not protect a node from its own bad acceptance decisions.
 - **Controller integrity is the trust boundary.** The guarantees below assume the Controller and its Wallet are intact; their compromise is full TEA compromise and is treated as the boundary condition, not a case the inner mechanisms defend against.
 - **VID resolution and key state are verifiable.** Verifiers can resolve counterparties' VIDs and their key/rotation history (e.g. via **did:webvh**) and reach credential status registries — with the explicit fail-closed rule when they cannot (see [Key management and freshness](#key-management-and-freshness)).
 - **Trust roots are chosen by the relying party.** Soundness bounds authority relative to a root; which roots to trust is out of scope (sound ≠ trusted).
@@ -681,7 +681,7 @@ The risks of the interpreted-policy and obligation mechanisms are mostly establi
 - **Interpretation gaps are disputes, not vulnerabilities.** A difference in reading a prose clause resolves as a dispute in the accountability layer under a reasonable-interpretation standard, not as a security hole; the binding act is acceptance.
 - **Unsatisfiable obligation sets.** The protocol guarantees obligations are explicit, accumulating, and verifiable — not that they are jointly satisfiable. Contradictions and dependency cycles are the same class of defect and are the accepting party's responsibility; an unsatisfiable set surfaces as an unavoidable breach in accountability, not an authorization error (see [Obligations](#obligations)). The only structural invariant on a `clause:` trigger is that the reference be a well-formed SAID.
 - **Obligation non-performance** never retroactively alters authority already exercised; it leaves a verifiable gap in the accountability trace and MAY trigger revocation for future exercises.
-- **Abusive or malicious obligations** are not prevented by the protocol. The intelligent-node assumption places the burden on the delegate to evaluate obligations before accepting; acceptance is the assumption of liability. The protocol does not protect a node from its own acceptance decisions.
+- **Abusive or malicious obligations** are not prevented by the protocol. The intelligent agent assumption places the burden on the delegate to evaluate obligations before accepting; acceptance is the assumption of liability. The protocol does not protect a node from its own acceptance decisions.
 
 ### Authenticated Exchange security
 
