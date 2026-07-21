@@ -56,9 +56,9 @@ ISO and IEC maintain terminological databases for use in standardization at the 
 
 ~ A Principal is a natural person or organization that can bear accountability. The accountability chain of any authority a TEA holds or exercises MUST terminate in a Principal; a TEA MUST NOT be the terminal responsible party for an authority. The Principal for an agent is typically its operator — the organization or individual responsible for the agent — not the infrastructure provider, not an Identity Provider, and not a platform vendor.
 
-[[def: Delegation of Authority,  Delegation of Authority and Duty, Delegation]]
+[[def: Delegation of Authority,  Delegation of Authorization and Obligation, Delegation]]
 
-~ A TEA may be given by another party, e.g. an application that can interact with a human user or an administrative system or another party, the authorization to take certain scoped actions or access certain scoped resources on their behalf or for their benefits within a limited time horizon. The process that such authorization is given is called Delegation of Authority. In this specification, we define ways such delegation can be performed through TSP based messages. When an authorization is delegated to TEAs, such delegated authority can be accompanied or attached with explcitly expressed Duties also expressed in TSP based messages that are defined in this specification. A delegation conveys a Capability together with any Duties, carried in a single authorization ACDC issued by the Delegator to the Delegate under the Delegator's AVID.
+~ A TEA may be given by another party, e.g. an application that can interact with a human user or an administrative system or another party, the authorization to take certain scoped actions or access certain scoped resources on their behalf or for their benefits within a limited time horizon. The process that such authorization is given is called Delegation of Authority. In this specification, we define ways such delegation can be performed through TSP based messages. When an authorization is delegated to TEAs, such delegated authority can be accompanied or attached with explcitly expressed Obligations also expressed in TSP based messages that are defined in this specification. A delegation conveys a Capability together with any post-gate policy — the Obligations the Delegate accepts and the Assumptions the authority rests on — carried in a single authorization ACDC issued by the Delegator to the Delegate under the Delegator's AVID.
 
 [[def: Capability]]
 
@@ -68,17 +68,41 @@ ISO and IEC maintain terminological databases for use in standardization at the 
 
 ~ A limitation is a typed bound restricting the conditions under which an otherwise-granted ability may be exercised, for example a maximum amount or a permitted category. A limitation is part of the capability and is decidable at the moment of exercise. It is the device that the capability-security literature calls a caveat.
 
-[[def: Duty]]
+[[def: Obligation]]
 
-~ A duty is an affirmative obligation that a Delegate accepts, which may come due in the future and is therefore not decidable at the moment of exercise. Duties are carried in the rule section of an authorization ACDC as Ricardian clauses, accumulate down a delegation chain, and are enforced through accountability. Duties do not enter the authorization decision. A duty is expressed as a conditional: a trigger (the antecedent) makes the obligation due, and discharge is evidenced by a TEA Signed Payload referencing the duty clause and the triggering artifact.
+~ An obligation is a duty the Delegate owes, which may come due in the future and is therefore not decidable at the moment of exercise. Obligations are carried in the rule section of an authorization ACDC, accumulate down a delegation chain, and are enforced through accountability; they do not enter the authorization decision. An obligation is expressed as a conditional: a trigger (the antecedent) makes it due, and discharge is evidenced by a TEA Signed Payload referencing the obligation clause and the triggering artifact. If an obligation is unmet, the obligor is answerable — a breach.
 
-[[def: Effective Capability, Effective Duty Set]]
+[[def: Assumption]]
 
-~ The effective capability and effective duty set are the authority and obligations actually held by a node in a delegation chain. The effective capability is the meet (intersection) of the capabilities along the chain, so it can only narrow as authority is re-delegated; the effective duty set is the union of the duties along the chain, so it can only grow. Together these give the soundness properties that no node's authority exceeds that of its root, and no node can shed a duty imposed upon it.
+~ An assumption is a fact the authority rests on that the Delegate can neither control nor observe. Nobody is obliged to make it true, so it is not an obligation; if it proves false the act is undermined but no party is at fault — it goes to validity rather than breach. Assumptions are the same device as a contract's "whereas" clauses, and like those they serve as a defence only because they are disclosed up front and signed. An assumption belongs in a credential only if it conditions the authority. Where the Delegate can observe a fact, state the duty to watch for it and act, which is an obligation, rather than an assumption.
 
-[[def: Closed Capability Core, Open Policy]]
+[[def: Post-gate policy]]
 
-~ The closed capability core is the decidable resource/ability/limitation model whose meet every conforming verifier computes identically without a general policy engine. It is the security and safety floor of the delegation model and establishes a provable ceiling on authority. Open policy is additional condition content carried in the rule section — either a formal expression in a designated policy model or natural-language prose — and is expected to be the principal avenue by which parties express what they actually mean. Open policy is evaluated after the closed-core meet and may only further restrict, never broaden, the resulting authority.
+~ Post-gate policy is the stated policy settled after the act rather than at the gate: the Obligations a Delegate owes and the Assumptions the authority rests on. It rides alongside the capability, does not enter the authorization decision, and accumulates by union down a delegation chain. Obligations are the Delegate's exposure and assumptions are its cover, so the line between them is the risk allocation, written down and signed.
+
+[[def: Effective Capability, Effective Obligation Set]]
+
+~ The effective capability and effective obligation set are the authority and obligations actually held by a node in a delegation chain. The effective capability is the meet (intersection) of the capabilities along the chain, so it can only narrow as authority is re-delegated; the effective obligation set is the union of the obligations along the chain, so it can only grow. Together these give the soundness properties that no node's authority exceeds that of its root, and no node can shed an obligation imposed upon it. The model is sound, and complete relative to the supplied vocabulary: anything decidable at the gate can be expressed as a capability, since the vocabulary is namespace-supplied and unrestricted by this specification.
+
+[[def: Closed Capability Core]]
+
+~ The closed capability core is the decidable resource/ability/limitation model whose meet every conforming verifier computes identically without a general policy engine. It is the security and safety floor of the delegation model and establishes a provable ceiling on authority. It is also the pinned evaluation semantics: it fixes what a limitation means and how limitations compose, but not how one is written.
+
+[[def: Interpreted Policy]]
+
+~ Stated policy is either computed — evaluated mechanically against the closed capability core — or interpreted, meaning read and judged by a capable party. This is an attribute of an individual limitation, obligation, or assumption rather than a separate layer or kind. Interpreted policy is expected to be the principal avenue by which parties express what they actually mean, and its content may be prose, other text, or any medium a capable party can interpret. Interpretation cannot escalate authority: an interpreted limitation is still a limitation, and limitations only narrow, so the worst a misreading can do is fail to narrow.
+
+[[def: Profile, Named Syntactic Profile]]
+
+~ A profile is a published fragment of an existing policy language's grammar, together with the mapping from expressions in that fragment into the capability core. It allows an implementation to express computed limitations in a familiar language while the meaning and composition remain the specification's. A conforming verifier MUST reject an expression outside the declared profile. A profile must be total (every expression in the fragment denotes) and deterministic (the denotation is fixed and identical for every verifier); it need not be monotone, since the meet discards an expression that attempts to broaden. Languages used through conforming profiles are interchangeable syntaxes over one semantics.
+
+[[def: Namespace]]
+
+~ A namespace supplies the concrete values the capability axes draw on: resource schemes, ability vocabularies, limitation-types, and obligation-types. Owner-local and community-wide namespaces coexist, each published and SAID-addressed. Trust in a namespace comes from the self-addressing identifier, not from any authority that serves it, so how many sources serve one is an availability question rather than a trust one — a single registry is the N=1 case and is admissible. A sole source cannot substitute a definition undetected but can withhold one, so resolution failure costs the ability to decide, never the correctness of a decision actually made.
+
+[[def: Intelligent Agent Assumption]]
+
+~ This specification assumes TEA agents are capable: the protocol supplies a common language and a communication channel, not a reasoning engine, and does not itself evaluate the wisdom, consistency, or satisfiability of what parties agree to. A TEA evaluates the terms it accepts on its own. Discretion under this assumption cannot exceed a capability — no judgment reasons an agent into authority it does not hold — but is free over interpreted policy, obligations, and assumptions, so no separate judgment tier is defined.
 
 [[def: Trust Task]]
 
@@ -94,7 +118,7 @@ ISO and IEC maintain terminological databases for use in standardization at the 
 
 [[def: Authentic Chained Data Container, ACDC]]
 
-~ An Authentic Chained Data Container is the container used to carry authorizations and duties. An authorization ACDC uses its three sections for distinct purposes: the attribute section carries the Capability, the rule section carries Duties as Ricardian clauses together with any open policy, and the edge section chains to the ACDC that establishes the issuer's own authority. An ACDC body is content-addressed by its SAID but is not itself signed; authenticity comes from the issuer's signature attached at issuance and anchored in the issuer's key state.
+~ An Authentic Chained Data Container is the container used to carry authorizations, obligations, and assumptions. An authorization ACDC uses its three sections for distinct purposes: the attribute section carries the Capability, the rule section carries the post-gate policy — obligations and assumptions — and the edge section chains to the ACDC that establishes the issuer's own authority. An ACDC body is content-addressed by its SAID but is not itself signed; authenticity comes from the issuer's signature attached at issuance and anchored in the issuer's key state.
 
 [[def: Self-Addressing Identifier, SAID]]
 
@@ -106,7 +130,7 @@ ISO and IEC maintain terminological databases for use in standardization at the 
 
 [[def: Accountability]]
 
-~ A TEA may be required to observe some rules or duties that are not automatically enforced or even explicitly stated. For example, computer systems often do not enforce by the system implementation Terms of Use agreements. Such terms can later be accounted after violation occured. Accountability is a process that can be used to investigate and discover whether certain such rules or duties were indeed observed by the TEA during a given time period. This process is usually performed after the fact. The accountability chain of any authority a TEA holds MUST terminate in a Principal.
+~ A TEA may be required to observe some rules or obligations that are not automatically enforced or even explicitly stated. For example, computer systems often do not enforce by the system implementation Terms of Use agreements. Such terms can later be accounted after violation occured. Accountability is a process that can be used to investigate and discover whether certain such rules or duties were indeed observed by the TEA during a given time period. This process is usually performed after the fact. The accountability chain of any authority a TEA holds MUST terminate in a Principal.
 
 [[def: Audit]]
 
