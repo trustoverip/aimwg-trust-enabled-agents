@@ -74,11 +74,11 @@ The TEA MUST support these VIDs:
 
 The TEA MUST support the pre-rotation feature of the **did:webvh**.
 
-## TSP Gateway
+### TSP Gateway
 
 The TSP Gateway MUST support both confidential and meta-data privacy functions that are optional in TSP. It MUST also support both NaCl and HPKE-base modes.
 
-## TSP Message Serializations
+### TSP Message Serializations
 
 The TSP protocol specifies serialization using CESR which covers the envelope and nested and routed envelopes. In addition, it also specifies a set of control messages. For the payload data of a TSP message, TEA can use either native CESR, or JSON, CBOR or MsgPack serializations. This is a very useful feature especially when we have an existing higher layer protocols that we may want to layer over TSP.
 
@@ -105,7 +105,7 @@ ACDC adds essentially nothing to this scheme. Where the payload is an ACDC, the 
 > **Note (placement).** This scheme reuses primitives already present in TSP and the KERI/ACDC stack (self-addressing identifiers and VID-keyed signatures); it is specified here as a TEA profile binding them to the AVID and to third-party verifiability. It could be upstreamed into the TSP specification unchanged.
 
 
-## Transports
+### Transports
 
 TSP is agnostic to transport layer choices. For TEA, we are also agnostic to transport layer options but it will be more convenient in integration with other protocols or systems if we choose the same common options.
 
@@ -114,7 +114,7 @@ The TEA MUST at least support these transport options:
 - **Streamable HTTP (SHTTP)**: as defined in the MCP specification (TODO: ADD reference)
 - **stdio**: as defined in the MCP specification (TODO: ADD reference)
 
-## Layering Existing Protocols over TSP as Trust Tasks
+### Layering Protocols over TSP as Trust Tasks
 
 TSP is designed to support higher layer protocols, called Trust Tasks, over TSP. Such trust tasks MAY be existing commonly used protocols ported over to TSP, e.g. MCP, or can be new protocols specified in one of the following sections, or in other specifications outside of this document.
 
@@ -157,10 +157,6 @@ The following requirements apply to any conforming instantiation of the pattern:
 > **Editor's note (binding model):** Requirements 5–9 adopt a hybrid of explicit validity bounds and affirmative (confirm-binds) binding. The alternatives — validity bounds alone, or affirmative binding alone — are discussed in [Design Rationale and Comparison](#design-rationale-and-comparison). The working group should confirm the hybrid before these are finalized.
  
 Other Trust Tasks MAY follow alternative patterns or port existing protocols over TSP (see [Layering Existing Protocols over TSP as Trust Tasks](#layering-existing-protocols-over-tsp-as-trust-tasks) and [MCP over TSP](#mcp-over-tsp)); in every case the requirement is that they run over TSP and, where third-party verifiability is needed, carry their content as TEA Signed Payloads.
-
-## MCP over TSP
-
-TODO
 
 ## Delegation of Authorization and Obligation
 
@@ -397,7 +393,10 @@ Where evaluation is discretionary (prose / prompt) rather than deterministic, th
 
 3. **Soundness property.** For any delegation chain, the closed capability core guarantees that no node's effective capability can exceed the capability of its root or roots, and no node's effective obligation set can be smaller than the union imposed along its chain — *regardless of any interpreted policy carried alongside it*, since an interpreted limitation can only narrow further. This property is intended to be stated and proven as part of [Security and Trust Considerations](#security-and-trust-considerations).
 4. **Expressiveness.** Soundness bounds what a chain may express relative to its root; it is not a claim about what can be said. Separately, this specification is **complete relative to the supplied vocabulary**: any policy decidable at the gate can be expressed as a capability, because the vocabulary it ranges over is namespace-supplied and unrestricted by this specification. Anything unexpressible is unexpressed by an author's choice, never excluded by the framework.
- 
+
+## Presentation and Verification 
+Title of this section TBD - tenatatively we reuse the common name for presentation and verification like a credential.
+
 ## Accountability
 
 Authorization and accountability are distinct functions served by the same structure. A chain of ACDCs, read from root to leaf, expresses the delegation and provenance of authority; read from leaf to root, the same chain is the accountability trace. A TEA is therefore a single unit of authorization *and* accountability because both derive from one cryptographic structure.
@@ -409,6 +408,22 @@ Requirements:
 1. An authorization or agreement that must be accountable to a third party MUST be recorded as a TEA Signed Payload (see [TEA Signed Payload](#tea-signed-payload)) tied to the responsible party's AVID.
 2. The accountability chain of any authority a TEA holds or exercises MUST terminate in a principal — a natural person or organization — that can bear accountability. A TEA MUST NOT be the terminal responsible party for an authority.
 3. An authorization MUST NOT be inferred solely from a record that an agreement occurred; conferral of authority requires an authorization ACDC as defined in [Delegation of Authorization and Obligation](#delegation-of-authorization-and-obligation).
+
+## Integration with AI Agent Protocols
+
+TEA is designed to integrate with common AI Agent protocols, such as MCP and A2A, at their design interfaces in a modular way to facilitate reuse, minimize friction and ease security and trust reasoning.
+
+The main surface of integration is as follows:
+- identity and authorization/authentication
+- transport.
+
+More general discussions TODO
+
+### Integration with MCP
+TODO
+
+### Integration with A2A
+TODO
 
 ## Worked Example: Delegated Service Access
 
