@@ -82,11 +82,11 @@ The TSP Gateway MUST support both confidential and meta-data privacy functions t
 
 The TSP protocol specifies serialization using CESR which covers the envelope and nested and routed envelopes. In addition, it also specifies a set of control messages. For the payload data of a TSP message, TEA can use either native CESR, or JSON, CBOR or MsgPack serializations. This is a very useful feature especially when we have an existing higher layer protocols that we may want to layer over TSP.
 
-### TEA Signed Payload
+### TSP Signed Payload
 
 A TEA often needs a payload carried by TSP to bear a sender signature tied to one of its VIDs — typically the AVID — that a **third party** can verify. Although TSP authenticates messages at the Trust Spanning Layer, that authentication assures only the *receiver* and is not transferable: a third party who did not receive the message cannot use it as proof of authorship. Authorization and accountability both require presenting such proofs to parties who were not the receiver, so the TEA defines a transferable, non-repudiable signed payload.
 
-The scheme is deliberately general — "**sign the SAID under the VID**" — and is independent of the payload's serialization and of whether the payload is an ACDC. A **TEA Signed Payload** consists of:
+The scheme is deliberately general — "**sign the SAID under the VID**" — and is independent of the payload's serialization and of whether the payload is an ACDC. A **TSP Signed Payload** consists of:
 
 1. a **payload**, in any serialization permitted by [TSP Message Serializations](#tsp-message-serializations) (native CESR, JSON, CBOR, or MsgPack);
 2. a **SAID** — the self-addressing digest over that payload (which an ACDC already carries in its `d` field; for any other payload it is computed the same way);
@@ -98,9 +98,9 @@ Requirements:
 2. The signing VID MUST be identified so a verifier knows whose key state to resolve. For authorization and accountability content this VID MUST be the signer's AVID.
 3. A verifier MUST: (a) recompute the SAID over the payload and confirm it matches; (b) resolve the signing VID's key state; and (c) verify the signature(s) against that key state.
 4. Where the payload's validity depends on time (for example a `validUntil`, or a key rotation in the signer's VID history), the signature MUST be evaluated against the signing VID's key state as of the signer's own timestamp, within a defined clock-skew tolerance, consistent with the timestamp rules of the [Authenticated Exchange Protocol](#authenticated-exchange-protocol).
-5. The TEA Signed Payload is **in addition to**, not a substitute for, TSP message-level signing; the presence of one does not satisfy the requirement for the other.
+5. The TSP Signed Payload is **in addition to**, not a substitute for, TSP message-level signing; the presence of one does not satisfy the requirement for the other.
 
-ACDC adds essentially nothing to this scheme. Where the payload is an ACDC, the TEA Signed Payload signature is simply the ACDC's issuer signature over its SAID, produced under the issuer's AVID — no additional signature is required. Verification proceeds as above, with one addition: for an issued credential the verifier MUST also check the credential's status registry (`ri`) for non-revocation and validity, as required by [Delegation of Authorization and Obligation](#delegation-of-authorization-and-obligation). Thus an authorization ACDC issued under the AVID, presented with its signature attachments, *is* a TEA Signed Payload.
+ACDC adds essentially nothing to this scheme. Where the payload is an ACDC, the TSP Signed Payload signature is simply the ACDC's issuer signature over its SAID, produced under the issuer's AVID — no additional signature is required. Verification proceeds as above, with one addition: for an issued credential the verifier MUST also check the credential's status registry (`ri`) for non-revocation and validity, as required by [Delegation Exchange](#delegation-exchange). Thus an authorization ACDC issued under the AVID, presented with its signature attachments, *is* a TSP Signed Payload.
 
 > **Note (placement).** This scheme reuses primitives already present in TSP and the KERI/ACDC stack (self-addressing identifiers and VID-keyed signatures); it is specified here as a TEA profile binding them to the AVID and to third-party verifiability. It could be upstreamed into the TSP specification unchanged.
 
@@ -120,7 +120,7 @@ TSP is designed to support higher layer protocols, called Trust Tasks, over TSP.
 
 Regardless of whether a Trust Task is an existing protocol ported to TSP or a new protocol defined in this specification, the following requirements apply. A Trust Task protocol MUST conduct all of its trust-establishing communication either directly over the TSP Gateway (the Trust Spanning Layer) or over another Trust Task protocol that itself runs over TSP. A Trust Task protocol MUST NOT re-implement the authenticity, message integrity, confidentiality, or metadata-privacy guarantees that TSP already provides; it relies on the TSP Gateway for them.
 
-Where a Trust Task carries content that a third party — one that is not the TSP receiver — must be able to verify, it MUST carry that content as a TEA Signed Payload (see [TEA Signed Payload](#tea-signed-payload)) tied to the appropriate VID, typically the AVID.
+Where a Trust Task carries content that a third party — one that is not the TSP receiver — must be able to verify, it MUST carry that content as a TSP Signed Payload (see [TSP Signed Payload](#tsp-signed-payload)) tied to the appropriate VID, typically the AVID.
 
 ## Authenticated Exchange Protocol
  
@@ -145,7 +145,7 @@ A minimal exchange is `Propose → Accept → Ack`. A flexible exchange is `Prop
 The following requirements apply to any conforming instantiation of the pattern:
  
 1. Every message MUST be sent over the TSP between the Initiator's VID and the Responder's VID.
-2. Each message payload MUST be carried as an Authentic Chained Data Container (ACDC), serialized as permitted in [TSP Message Serializations](#tsp-message-serializations). Where a message must be verifiable by a third party it MUST be a TEA Signed Payload (see [TEA Signed Payload](#tea-signed-payload)) tied to the sender's AVID. ACDC is the common interoperability primitive of the pattern regardless of the parties' particular pattern of negotiation — their "pattern of speech."
+2. Each message payload MUST be carried as an Authentic Chained Data Container (ACDC), serialized as permitted in [TSP Message Serializations](#tsp-message-serializations). Where a message must be verifiable by a third party it MUST be a TSP Signed Payload (see [TSP Signed Payload](#tsp-signed-payload)) tied to the sender's AVID. ACDC is the common interoperability primitive of the pattern regardless of the parties' particular pattern of negotiation — their "pattern of speech."
 3. An Accept MUST reference the specific Propose it accepts by a verifiable identifier (for example, the SAID of that Propose's container).
 4. A party MUST treat only the most recent superseding Propose as the live offer; earlier proposals in the same exchange are no longer acceptable once superseded.
 5. **Bounding invariant.** Any message that leaves its sender exposed pending the counterparty's next action MUST carry a validity bound. A Propose MUST carry a `validUntil` bounding the time by which it may be accepted; an Accept MUST carry a `validUntil` bounding the time by which the binding Ack must be effective. An offer or acceptance MUST NOT be open-ended.
@@ -156,9 +156,9 @@ The following requirements apply to any conforming instantiation of the pattern:
 
 > **Editor's note (binding model):** Requirements 5–9 adopt a hybrid of explicit validity bounds and affirmative (confirm-binds) binding. The alternatives — validity bounds alone, or affirmative binding alone — are discussed in [Design Rationale and Comparison](#design-rationale-and-comparison). The working group should confirm the hybrid before these are finalized.
  
-Other Trust Tasks MAY follow alternative patterns or port existing protocols over TSP (see [Layering Existing Protocols over TSP as Trust Tasks](#layering-existing-protocols-over-tsp-as-trust-tasks) and [MCP over TSP](#mcp-over-tsp)); in every case the requirement is that they run over TSP and, where third-party verifiability is needed, carry their content as TEA Signed Payloads.
+Other Trust Tasks MAY follow alternative patterns or port existing protocols over TSP (see [Layering Existing Protocols over TSP as Trust Tasks](#layering-existing-protocols-over-tsp-as-trust-tasks) and [MCP over TSP](#mcp-over-tsp)); in every case the requirement is that they run over TSP and, where third-party verifiability is needed, carry their content as TSP Signed Payloads.
 
-## Delegation of Authorization and Obligation
+## Delegation Exchange
 
 A TEA confers authority on another TEA by *delegation*. A delegation conveys things of two different kinds: an **authority** — what the Delegate may do — and **post-gate policy** — the obligations the Delegate accepts and the assumptions the authority rests on, settled after the act rather than at the gate. All are carried in a single authorization ACDC issued by the Delegator to the Delegate.
 
@@ -325,7 +325,7 @@ WHEN <antecedent>  THEN  <obligation>  BY <deadline relative to the antecedent>
 
 The `trigger` field *is* the antecedent. The protocol does not evaluate whether the antecedent holds; it makes both the antecedent and the discharge into **verifiable artifacts that link by SAID**, so that compliance becomes a matching check over the evidence trail rather than a deontic evaluation:
 
-- the **antecedent artifact** (e.g. the booking record, itself a TEA Signed Payload) proves the obligation is now due;
+- the **antecedent artifact** (e.g. the booking record, itself a TSP Signed Payload) proves the obligation is now due;
 - the **discharge artifact** (e.g. the report) proves it was met, and MUST reference both the obligation clause's SAID and the triggering artifact's SAID.
 
 A trigger is one of the following kinds:
@@ -343,7 +343,7 @@ on:
 
 #### Discharge and non-performance
 
-Discharge is a TEA Signed Payload, tied to the obligor's AVID, that references the obligation clause's SAID and (for event/exercise/clause triggers) the triggering artifact's SAID. Non-performance never retroactively invalidates authority that was already exercised; it leaves a verifiable gap in the accountability trace and MAY trigger revocation through the status registry for future exercises. Enforcement is by evidence and revocation, never by recomputation of the capability meet.
+Discharge is a TSP Signed Payload, tied to the obligor's AVID, that references the obligation clause's SAID and (for event/exercise/clause triggers) the triggering artifact's SAID. Non-performance never retroactively invalidates authority that was already exercised; it leaves a verifiable gap in the accountability trace and MAY trigger revocation through the status registry for future exercises. Enforcement is by evidence and revocation, never by recomputation of the capability meet.
 
 #### Consistency is the accepting party's responsibility
 
@@ -394,20 +394,54 @@ Where evaluation is discretionary (prose / prompt) rather than deterministic, th
 3. **Soundness property.** For any delegation chain, the closed capability core guarantees that no node's effective capability can exceed the capability of its root or roots, and no node's effective obligation set can be smaller than the union imposed along its chain — *regardless of any interpreted policy carried alongside it*, since an interpreted limitation can only narrow further. This property is intended to be stated and proven as part of [Security and Trust Considerations](#security-and-trust-considerations).
 4. **Expressiveness.** Soundness bounds what a chain may express relative to its root; it is not a claim about what can be said. Separately, this specification is **complete relative to the supplied vocabulary**: any policy decidable at the gate can be expressed as a capability, because the vocabulary it ranges over is namespace-supplied and unrestricted by this specification. Anything unexpressible is unexpressed by an author's choice, never excluded by the framework.
 
-## Presentation and Verification 
-Title of this section TBD - tenatatively we reuse the common name for presentation and verification like a credential.
+## Invocation Exchange 
+
+Authority is created in a Delegation Exchange and used in an Invocation Exchange. Both are instances of the Authenticated Exchange Protocol. The Invocation Exchange is the entire authorization lifecycle between an agent's - or the holder's - VID and the service's VID: it opens with presentation and verification, and continues with notices, denials, and disputes for as long as the authority is in use.
+
+### Presentation and Verification
+
+Before exercising delegated authority against a service, the holder MUST present the governing capability chain to the service and the service MUST verify it. Presentation is the opening phase of an Invocation Exchange.
+
+The presentation MUST carry the chain as a TSP Signed Payload tied to the holder's AVID.
+
+The service MUST verify: chain well-formedness and I2I linkage; rooting in issuance it accepts as authoritative for the resource; leaf Issuee VID equal to the TSP sender VID; validity window and non-revocation of every link; and a non-empty effective capability for the stated purpose. Verification failures are governed by fail-closed (Key management and freshness).
+
+Upon successful verification the authorization is bound to the holder's VID. Thereafter the TSP-authenticated sender VID is the only per-request authorization material. The scope and lifetime of the binding are those of the presented capability itself; no separate session object is created.
+
+For each exercise the service MUST ensure, at time of exercise, that the operation is within the effective capability and that the chain remains valid (Delegation Exchange, Requirement 4). How the service refreshes its view is an implementation choice within the freshness rules.
+
+The holder SHOULD screen its own requests against the capability it holds. Both parties hold the same signed contract; divergent evaluations are disputes, not protocol errors.
+
+## Continuing Exchange
+
+Subsequent authorization events between the same parties are messages of the same exchange:
+
+ - denial — a specific exercise was refused. Conditions: no-binding, exceeds-capability, stale, declined.
+ - notice — an unsolicited state change, e.g. revocation or expiry of a bound chain.
+ - re-presentation — a fresh chain presented per (1)–(4), replacing a stale binding.
+ - dispute — a party contests a prior denial or exercise.
+
+Correlation is by SAID. A denial MUST reference the refused exercise by the SAID of that message; a notice MUST reference the chain SAID; a dispute MUST reference the SAID of the denial or exercise contested. Any payload carried over TSP is SAID-addressable whether or not it is signed.
+
+Denials with condition exceeds-capability or declined, and all disputes, MUST be TSP Signed Payloads tied to the sender's AVID. Other denials and notices MAY be.
+
+A denial MUST carry its condition and its SAID reference. It MAY carry a what-would-suffice hint, including the roots of issuance the service accepts; the issuer of acceptable authority is not presumed to be the service. Disclosure beyond the required slots is service policy.
+
+Error-driven bootstrap is not the design intent of the Invocation Exchange. The normal flow as defined in this section SHOULD be followed. However, a no-binding denial is a correct response to an agent that did not present its capability ahead of time.
+
+A declined denial is not required to carry a reason: discretion above a passing verification needs no justification at the protocol level. It is, however, signed (Req. 9) and therefore attributable and disputable. Whether declining breaches the service's own duties is a matter of the obligations in the delegation that created the holder's authority, and is adjudicated through Accountability. A party that requires a duty to serve MUST express it as an obligation in the governing Delegation Exchange.
 
 ## Accountability
 
 Authorization and accountability are distinct functions served by the same structure. A chain of ACDCs, read from root to leaf, expresses the delegation and provenance of authority; read from leaf to root, the same chain is the accountability trace. A TEA is therefore a single unit of authorization *and* accountability because both derive from one cryptographic structure.
  
-Accountability is retrospective and evidentiary: it answers who agreed to or did what, and whether it can be proven after the fact. The ACDC chain provides accountability directly — each container is signed, chained, and non-repudiable — and, when carried as a TEA Signed Payload tied to the AVID, it can be presented to and verified by a third party that did not observe the original interaction.
+Accountability is retrospective and evidentiary: it answers who agreed to or did what, and whether it can be proven after the fact. The ACDC chain provides accountability directly — each container is signed, chained, and non-repudiable — and, when carried as a TSP Signed Payload tied to the AVID, it can be presented to and verified by a third party that did not observe the original interaction.
  
 Requirements:
  
-1. An authorization or agreement that must be accountable to a third party MUST be recorded as a TEA Signed Payload (see [TEA Signed Payload](#tea-signed-payload)) tied to the responsible party's AVID.
+1. An authorization or agreement that must be accountable to a third party MUST be recorded as a TSP Signed Payload (see [TSP Signed Payload](#tsp-signed-payload)) tied to the responsible party's AVID.
 2. The accountability chain of any authority a TEA holds or exercises MUST terminate in a principal — a natural person or organization — that can bear accountability. A TEA MUST NOT be the terminal responsible party for an authority.
-3. An authorization MUST NOT be inferred solely from a record that an agreement occurred; conferral of authority requires an authorization ACDC as defined in [Delegation of Authorization and Obligation](#delegation-of-authorization-and-obligation).
+3. An authorization MUST NOT be inferred solely from a record that an agreement occurred; conferral of authority requires an authorization ACDC as defined in [Delegation Exchange](#delegation-exchange).
 
 ## Integration with AI Agent Protocols
 
@@ -509,7 +543,7 @@ The effective obligations are the union along the chain: `{ report each booking 
 &nbsp;
 
 1. **Delegation.** Over their TSP channel, Alice and the Agent run the [Authenticated Exchange Protocol](#authenticated-exchange-protocol) to settle the terms; Alice's binding Ack issues `Cred_Alice→Agent` to the Agent in band.
-2. **Access.** The Agent opens an exchange with S, proposing a concrete booking (a $420 flight) and presenting the chain `{ Cred_Alice→Agent ▸ Cred_S→Alice }` as a TEA Signed Payload (see [TEA Signed Payload](#tea-signed-payload)) tied to `AVID_Agent`.
+2. **Access.** The Agent opens an exchange with S, proposing a concrete booking (a $420 flight) and presenting the chain `{ Cred_Alice→Agent ▸ Cred_S→Alice }` as a TSP Signed Payload (see [TSP Signed Payload](#tsp-signed-payload)) tied to `AVID_Agent`.
 3. **Verification.** S confirms the chain roots in its own issuance (`AVID_S`); that the I2I edge holds (Alice is the Issuee of the authority she re-delegated); that the leaf Issuee is the TSP counterparty presenting it; that the meet of the chain covers the requested operation; and that no ACDC on the chain is revoked or past its `validUntil`. S then Accepts/Acks and creates the booking.
 4. **Obligation.** The Agent discharges its obligation by reporting the booking to Alice as a signed payload.
 
@@ -713,7 +747,7 @@ The risks of the interpreted-policy and obligation mechanisms are mostly establi
 
 ### Privacy and disclosure
 
-- **A TEA Signed Payload is intentionally not receiver-private.** Its purpose is transferable, third-party-verifiable proof, so presenting authorization or accountability content necessarily discloses authorship and content to the verifying third party. This is a deliberate trade against the metadata-privacy that TSP otherwise provides for transport.
+- **A TSP Signed Payload is intentionally not receiver-private.** Its purpose is transferable, third-party-verifiable proof, so presenting authorization or accountability content necessarily discloses authorship and content to the verifying third party. This is a deliberate trade against the metadata-privacy that TSP otherwise provides for transport.
 - **Disclose the minimum.** A presenter SHOULD present only the portion of the delegation chain required for the decision at hand, avoiding unnecessary exposure of the wider delegation graph.
 - **Selective and graduated disclosure.** ACDC's selective-disclosure facilities SHOULD be used to reveal only the attributes, limitations, and obligations a relying party needs, and to reference other nodes by commitment where full content is not required — limiting exposure of sensitive business terms in limitations and obligations to the intended relying party.
 - **Correlation and VID role.** Reuse of a single AVID across many relying parties enables correlation of a TEA's activities — an inherent cost of accountability, since the AVID is *meant* to be linkable for that purpose. Where unlinkability matters, a TEA SHOULD use distinct or private VIDs (the specification permits additional private VIDs) for interactions that do not require AVID-tied accountability, trading linkability against privacy per VID role (IVID / AVID / private VIDs).
