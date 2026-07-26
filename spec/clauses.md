@@ -445,13 +445,13 @@ Requirements:
 
 ## Integration with AI Agent Protocols
 
-TEA is designed to integrate with common AI Agent protocols, such as MCP and A2A, at their design interfaces in a modular way to facilitate reuse, minimize friction and ease security and trust reasoning.
+TEA integrates with agent protocols such as MCP and A2A at the interfaces those protocols already define, leaving their messages unchanged.
 
-The main surface of integration is as follows:
-- identity and authorization/authentication
-- transport.
+TEA is a family of exchanges between different party pairs. An agent uses the Delegation Exchange to obtain one or more capabilities from one or more parties who have relevant authorities. This exchange is similar in its role to a party interacting with an Authorization Service (AS) via OAuth, but has significantly different trust framework in TEA. An agent uses the Invocation Exchange to access a service by presenting the capability or capabilities that are previously delegated to it. This echange is similar in its role to a party accessing a web service via HTTPS with an anthorization token, but again has significantly different trust framework in TEA.
 
-More general discussions TODO
+The host protocol and the Invocation Exchange are sibling channels over the same TSP relationship: host-protocol payloads and TEA payloads are multiplexed over one authenticated relationship between the same two VIDs. Neither protocol carries the other. All authorization traffic — presentation, denials, notices, disputes — is Invocation Exchange traffic; host-protocol messages carry no authorization content in either direction, and are referenceable from the Invocation Exchange by SAID.
+
+Issuer and verifier are roles, not deployment prescriptions: the issuer of a root capability and the service that verifies chains rooted in it may be one entity or separate. The issuer participates through its signatures in the chain, never through presence in the exchange.
 
 ### Integration with MCP
 TODO
