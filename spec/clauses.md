@@ -243,6 +243,14 @@ Requirements:
 3. A non-root delegated authority MUST bound its validity with a `validUntil` time limitation — a bounded-scalar limitation whose meet is the earlier bound, so validity can only shorten as authority is re-delegated. It MAY additionally be made revocable by issuing it in indirect mode with a revocation registry (see Freshness); revocation adds best-effort early termination whose effectiveness is deployment-specific, and is never a substitute for the validUntil bound. A root issuance MAY be open-ended, expressed as the absence of the limitation (⊤ = no expiry).
 4. Verification of a delegated authority MUST confirm, at the time of exercise, that every ACDC on the relevant chain is within its validity window and, for any ACDC issued with a revocation registry, not revoked in that registry's current state.
 
+**VIDs where ACDC specifies AIDs.** ACDC specifies its Issuer and Issuee identifiers as AIDs. A TEA places a VID in those fields, following TSP's model, in which a VID may be of any type provided it meets the required security properties. What TEA requires is not a particular method but a set of properties: cryptographically provable control and an independently verifiable key-state history (see Verifiable Identifiers). Any VID that supplies these is admissible. Concretely, three bindings must hold, each met through the VID's own key-state mechanism:
+
+- **identity** — control of the identifier is verifiable;
+- **issuance** — the issuer's commitment to the ACDC is anchored to its key state at the time of issuance;
+- **revocation** (optional; see Freshness) — a verifiable, controller-committed record of the credential's state.
+
+Because these are stated as properties rather than as a specific mechanism, a TEA authorization is ACDC-structured but verified against the presenting VID's method — verifiable by a relying party that supports that VID type, though not necessarily by one limited to a single VID method.
+
 ### Attenuated Re-delegation
 
 Re-delegation MUST be supported, MUST be general and composable — chains of arbitrary depth, and authority composable from more than one source — and MUST be strictly attenuating: authority can only narrow as it is re-delegated. This is achieved with a capability model whose narrowing is intrinsic rather than merely checked.
