@@ -219,6 +219,7 @@ a:                                   # capability — the "may I?"
   ability:  [ … ]                    # omitted ⇒ inherit from parent
   limitations:                       # omitted keys ⇒ no limit on that axis
     <limitation-type>: <bound>
+    validUntil: <ts>                 # expiry as a bounded-scalar limitation (meet = min); absent ⇒ no expiry
 r:                                   # post-gate policy
   obligations:                       # duties the Delegate owes
     - t:  <obligation-type>          # registry term
@@ -232,7 +233,6 @@ r:                                   # post-gate policy
       l:  "<rendering>"
 e:
   auth: { n: <parent SAID>, o: I2I } # or DI2I; absent at a root issuance
-validUntil: <ts>
 ri: <status registry>
 ```
 
@@ -240,7 +240,7 @@ Requirements:
 
 1. A delegated authority MUST be expressed as an authorization ACDC issued by the Delegator (as Issuer) to the Delegate (as Issuee), under the Delegator's AVID.
 2. The authorization ACDC MUST either (a) include an edge referencing the ACDC that establishes the Delegator's own authority, using the I2I operator (or the DI2I operator where the Delegator's identifier is itself delegated), so that the Issuer of the delegation is constrained to be the Issuee of the authority being delegated; or (b) be a root issuance, which carries no incoming authority edge. Case (a) is the structural expression that a party may only delegate authority it holds; case (b) is the origin of authority over the resource. Whether a given root is trusted is a relying-party decision and is out of scope of this specification.
-3. A non-root delegated authority MUST carry a `validUntil` validity bound and MUST be revocable through its credential status registry. (A root issuance MAY be open-ended; its lifetime is governed by the resource owner.)
+3. A non-root delegated authority MUST bound its validity with a validUntil time limitation — a bounded-scalar limitation whose meet is the earlier bound, so validity can only shorten as authority is re-delegated — and MUST be revocable through its credential status registry. A root issuance MAY be open-ended, expressed as the absence of the limitation (⊤ = no expiry).
 4. Verification of a delegated authority MUST confirm, at the time of exercise, that every ACDC on the relevant chain is non-revoked and within its validity window.
 
 ### Attenuated Re-delegation
@@ -499,6 +499,7 @@ Cred_Alice→Agent
     limitations:
       maxAmount: 500 USD             # bounded scalar  (meet = min)
       category:  [ flights ]         # membership set  (meet = ∩)
+      validUntil: <now + 7 days>     # bounded scalar  (meet = min): earliest expiry wins
   r:                                 # post-gate policy
     obligations:
       - t:  report
@@ -512,7 +513,6 @@ Cred_Alice→Agent
     auth:
       n: <SAID of Cred_S→Alice>      # far node = the parent authority
       o: I2I                         # Issuer(this) MUST be Issuee(parent): Alice = Alice  ✓
-  validUntil: <now + 7 days>
   ri: <Alice's status registry>
 ```
 
@@ -708,7 +708,7 @@ Because keys rotate, a signature MUST be evaluated against the key state that wa
 
 A credential carries two independent expiry mechanisms, and both MUST be checked **at the time of exercise**, for **every** ACDC on the chain (per [Delegation](#delegation-of-authorization-and-obligation) Req 4):
 
-- a **`validUntil`** bound, fixed at issuance — a static ceiling on lifetime; and
+- a **`validUntil`** time limitation, fixed at issuance — a static ceiling on lifetime; and
 - **revocation** through the credential status registry (`ri`) — a dynamic signal that the authority has been withdrawn early (key compromise, ended relationship, completed task).
 
 Both exist because they fail differently: `validUntil` bounds exposure even when revocation infrastructure is unreachable, while revocation handles termination that cannot wait for expiry. Verification is fresh on each exercise, not once at receipt.
