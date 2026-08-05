@@ -100,7 +100,7 @@ Requirements:
 4. Where the payload's validity depends on time (for example a `validUntil`, or a key rotation in the signer's VID history), the signature MUST be evaluated against the signing VID's key state as of the signer's own timestamp, within a defined clock-skew tolerance, consistent with the timestamp rules of the [Authenticated Exchange Protocol](#authenticated-exchange-protocol).
 5. The TSP Signed Payload is **in addition to**, not a substitute for, TSP message-level signing; the presence of one does not satisfy the requirement for the other.
 
-ACDC adds essentially nothing to this scheme. Where the payload is an ACDC, the TSP Signed Payload signature is simply the ACDC's issuer signature over its SAID, produced under the issuer's AVID — no additional signature is required. Verification proceeds as above, with one addition: for an issued credential the verifier MUST also check the credential's status registry (`ri`) for non-revocation and validity, as required by [Delegation Exchange](#delegation-exchange). Thus an authorization ACDC issued under the AVID, presented with its signature attachments, *is* a TSP Signed Payload.
+ACDC adds essentially nothing to this scheme. Where the payload is an ACDC, the TSP Signed Payload signature is simply the ACDC's issuer signature over its SAID, produced under the issuer's AVID — no additional signature is required. Verification proceeds as above, with one addition: for an issued credential the verifier MUST also check its validity and, where it carries a revocation registry (`rd`), its non-revocation,, as required by [Delegation Exchange](#delegation-exchange). Thus an authorization ACDC issued under the AVID, presented with its signature attachments, *is* a TSP Signed Payload.
 
 > **Note (placement).** This scheme reuses primitives already present in TSP and the KERI/ACDC stack (self-addressing identifiers and VID-keyed signatures); it is specified here as a TEA profile binding them to the AVID and to third-party verifiability. It could be upstreamed into the TSP specification unchanged.
 
@@ -233,15 +233,15 @@ r:                                   # post-gate policy
       l:  "<rendering>"
 e:
   auth: { n: <parent SAID>, o: I2I } # or DI2I; absent at a root issuance
-ri: <status registry>
+rd: <registry SAID> # optional — present ⇒ revocable (indirect mode); absent ⇒ expiry-only
 ```
 
 Requirements:
 
-1. A delegated authority MUST be expressed as an authorization ACDC issued by the Delegator (as Issuer) to the Delegate (as Issuee), under the Delegator's AVID.
+1. A delegated authority MUST be expressed as an authorization ACDC issued by the Delegator (as Issuer) to the Delegate (as Issuee) — a Targeted ACDC — under the Delegator's AVID. An Untargeted ACDC, having no Issuee, cannot carry a delegation.
 2. The authorization ACDC MUST either (a) include an edge referencing the ACDC that establishes the Delegator's own authority, using the I2I operator (or the DI2I operator where the Delegator's identifier is itself delegated), so that the Issuer of the delegation is constrained to be the Issuee of the authority being delegated; or (b) be a root issuance, which carries no incoming authority edge. Case (a) is the structural expression that a party may only delegate authority it holds; case (b) is the origin of authority over the resource. Whether a given root is trusted is a relying-party decision and is out of scope of this specification.
-3. A non-root delegated authority MUST bound its validity with a `validUntil` time limitation — a bounded-scalar limitation whose meet is the earlier bound, so validity can only shorten as authority is re-delegated — and MUST be revocable through its credential status registry. A root issuance MAY be open-ended, expressed as the absence of the limitation (⊤ = no expiry).
-4. Verification of a delegated authority MUST confirm, at the time of exercise, that every ACDC on the relevant chain is non-revoked and within its validity window.
+3. A non-root delegated authority MUST bound its validity with a `validUntil` time limitation — a bounded-scalar limitation whose meet is the earlier bound, so validity can only shorten as authority is re-delegated. It MAY additionally be made revocable by issuing it in indirect mode with a revocation registry (see Freshness); revocation adds best-effort early termination whose effectiveness is deployment-specific, and is never a substitute for the validUntil bound. A root issuance MAY be open-ended, expressed as the absence of the limitation (⊤ = no expiry).
+4. Verification of a delegated authority MUST confirm, at the time of exercise, that every ACDC on the relevant chain is within its validity window and, for any ACDC issued with a revocation registry, not revoked in that registry's current state.
 
 ### Attenuated Re-delegation
 
@@ -343,7 +343,7 @@ on:
 
 #### Discharge and non-performance
 
-Discharge is a TSP Signed Payload, tied to the obligor's AVID, that references the obligation clause's SAID and (for event/exercise/clause triggers) the triggering artifact's SAID. Non-performance never retroactively invalidates authority that was already exercised; it leaves a verifiable gap in the accountability trace and MAY trigger revocation through the status registry for future exercises. Enforcement is by evidence and revocation, never by recomputation of the capability meet.
+Discharge is a TSP Signed Payload, tied to the obligor's AVID, that references the obligation clause's SAID and (for event/exercise/clause triggers) the triggering artifact's SAID. Non-performance never retroactively invalidates authority that was already exercised; it leaves a verifiable gap in the accountability trace and, where the delegation is revocable, MAY trigger revocation for future exercises. Enforcement is by evidence and revocation, never by recomputation of the capability meet.
 
 #### Consistency is the accepting party's responsibility
 
@@ -404,7 +404,7 @@ Before exercising delegated authority against a service, the holder MUST present
 
 The presentation MUST carry the chain as a TSP Signed Payload tied to the holder's AVID.
 
-The service MUST verify: chain well-formedness and I2I linkage; rooting in issuance it accepts as authoritative for the resource; leaf Issuee VID equal to the TSP sender VID; validity window and non-revocation of every link; and a non-empty effective capability for the stated purpose. Verification failures are governed by fail-closed (Key management and freshness).
+The service MUST verify: chain well-formedness and I2I linkage; rooting in issuance it accepts as authoritative for the resource; leaf Issuee VID equal to the TSP sender VID; validity window of every link, and non-revocation of every link that carries a revocation registry; and a non-empty effective capability for the stated purpose. Verification failures are governed by fail-closed (Key management and freshness).
 
 Upon successful verification the authorization is bound to the holder's VID. Thereafter the TSP-authenticated sender VID is the only per-request authorization material. The scope and lifetime of the binding are those of the presented capability itself; no separate session object is created.
 
@@ -483,7 +483,7 @@ Cred_S→Alice
     resource: bookingservice:account/alice
     ability:  [ create-booking, cancel-booking, view ]
   r:  { account terms ... }
-  ri: <S's status registry>
+  rd: <S's registry SAID>
   (no authority edge — S is the root of authority over the resource)
 ```
 
@@ -513,7 +513,7 @@ Cred_Alice→Agent
     auth:
       n: <SAID of Cred_S→Alice>      # far node = the parent authority
       o: I2I                         # Issuer(this) MUST be Issuee(parent): Alice = Alice  ✓
-  ri: <Alice's status registry>
+  rd: <Alice's registry SAID>
 ```
 
 ### Effective capability (the meet)
@@ -709,13 +709,13 @@ Because keys rotate, a signature MUST be evaluated against the key state that wa
 A credential carries two independent expiry mechanisms, and both MUST be checked **at the time of exercise**, for **every** ACDC on the chain (per [Delegation](#delegation-of-authorization-and-obligation) Req 4):
 
 - a **`validUntil`** time limitation, fixed at issuance — a static ceiling on lifetime; and
-- **revocation** through the credential status registry (`ri`) — a dynamic signal that the authority has been withdrawn early (key compromise, ended relationship, completed task).
+- **revocation** — an optional, dynamic signal that the authority was withdrawn early (key compromise, ended relationship, completed task). Revocation is not an event but a state: the issuer sets the transaction state of the ACDC's registry (`rd`) to revoked, anchored in its key-state log, and a verifier reads that current state..
 
 Both exist because they fail differently: `validUntil` bounds exposure even when revocation infrastructure is unreachable, while revocation handles termination that cannot wait for expiry. Verification is fresh on each exercise, not once at receipt.
 
 #### Fail closed
 
-**If a verifier cannot confirm non-revocation or the relevant key state, it MUST deny. Unverifiable is treated as unauthorized — never allowed by default.** This rule matters because the attacker's natural move is not to break the freshness check but to *block* it: deny-of-service the status registry or the VID resolver so that a revoked credential appears usable. Fail-closed turns that attack into a denial of access rather than a grant of it.
+**If a verifier cannot confirm non-revocation or the relevant key state, it MUST deny. Unverifiable is treated as unauthorized — never allowed by default.** This rule matters because the attacker's natural move is not to break the freshness check but to *block* it: deny-of-service a revocation registry or the VID resolver so that a revoked credential appears usable. Fail-closed turns that attack into a denial of access rather than a grant of it.
 
 The cost is availability: a registry or resolver outage produces denials. That is the correct trade for an authorization system — deny under uncertainty — but it can be tuned without abandoning the floor. A verifier MAY accept cached status within a bounded staleness window (a defined tolerance), trading a bounded revocation-latency risk for availability; and keeping `validUntil` windows short bounds how much any deployment must lean on revocation at all. Beyond the tolerated staleness, the rule is unconditional: deny.
 
