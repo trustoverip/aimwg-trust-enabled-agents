@@ -238,7 +238,7 @@ rd: <registry SAID> # optional — present ⇒ revocable (indirect mode); absent
 
 Requirements:
 
-1. A delegated authority MUST be expressed as an authorization ACDC issued by the Delegator (as Issuer) to the Delegate (as Issuee) — a Targeted ACDC — under the Delegator's AVID. An Untargeted ACDC, having no Issuee, cannot carry a delegation.
+1. A delegated authority MUST be expressed as an authorization ACDC issued by the Delegator (as Issuer) under the Delegator's AVID, to the Delegate (as Issuee) identified by the Delegate's AVID — a Targeted ACDC. An Untargeted ACDC, having no Issuee, cannot carry a delegation.
 2. The authorization ACDC MUST either (a) include an edge referencing the ACDC that establishes the Delegator's own authority, using the I2I operator (or the DI2I operator where the Delegator's identifier is itself delegated), so that the Issuer of the delegation is constrained to be the Issuee of the authority being delegated; or (b) be a root issuance, which carries no incoming authority edge. Case (a) is the structural expression that a party may only delegate authority it holds; case (b) is the origin of authority over the resource. Whether a given root is trusted is a relying-party decision and is out of scope of this specification.
 3. A non-root delegated authority MUST bound its validity with a `validUntil` time limitation — a bounded-scalar limitation whose meet is the earlier bound, so validity can only shorten as authority is re-delegated. It MAY additionally be made revocable by issuing it in indirect mode with a revocation registry (see Freshness); revocation adds best-effort early termination whose effectiveness is deployment-specific, and is never a substitute for the validUntil bound. A root issuance MAY be open-ended, expressed as the absence of the limitation (⊤ = no expiry).
 4. Verification of a delegated authority MUST confirm, at the time of exercise, that every ACDC on the relevant chain is within its validity window and, for any ACDC issued with a revocation registry, not revoked in that registry's current state.
@@ -410,11 +410,11 @@ Authority is created in a Delegation Exchange and used in an Invocation Exchange
 
 Before exercising delegated authority against a service, the holder MUST present the governing capability chain to the service and the service MUST verify it. Presentation is the opening phase of an Invocation Exchange.
 
-The presentation MUST carry the chain as a TSP Signed Payload tied to the holder's AVID.
+The presentation MUST carry the chain as a TSP Signed Payload signed under the holder's AVID — the AVID named as Issuee of the leaf capability.
 
-The service MUST verify: chain well-formedness and I2I linkage; rooting in issuance it accepts as authoritative for the resource; leaf Issuee VID equal to the TSP sender VID; validity window of every link, and non-revocation of every link that carries a revocation registry; and a non-empty effective capability for the stated purpose. Verification failures are governed by fail-closed (Key management and freshness).
+The service MUST verify: chain well-formedness and I2I linkage; rooting in issuance it accepts as authoritative for the resource; the Issuee AVID of the leaf capability equal to the VID that TSP authenticated as the sender; validity window of every link, and non-revocation of every link that carries a revocation registry; and a non-empty effective capability for the stated purpose. Verification failures are governed by fail-closed (Key management and freshness).
 
-Upon successful verification the authorization is bound to the holder's VID. Thereafter the TSP-authenticated sender VID is the only per-request authorization material. The scope and lifetime of the binding are those of the presented capability itself; no separate session object is created.
+Upon successful verification the authorization is bound to the holder's AVID. Thereafter the TSP-authenticated sender VID is the only per-request authorization material. The scope and lifetime of the binding are those of the presented capability itself; no separate session object is created.
 
 For each exercise the service MUST ensure, at time of exercise, that the operation is within the effective capability and that the chain remains valid (Delegation Exchange, Requirement 4). How the service refreshes its view is an implementation choice within the freshness rules.
 
