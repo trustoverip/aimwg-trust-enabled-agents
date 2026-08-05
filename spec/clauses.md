@@ -402,7 +402,7 @@ Where evaluation is discretionary (prose / prompt) rather than deterministic, th
 3. **Soundness property.** For any delegation chain, the closed capability core guarantees that no node's effective capability can exceed the capability of its root or roots, and no node's effective obligation set can be smaller than the union imposed along its chain — *regardless of any interpreted policy carried alongside it*, since an interpreted limitation can only narrow further. This property is intended to be stated and proven as part of [Security and Trust Considerations](#security-and-trust-considerations).
 4. **Expressiveness.** Soundness bounds what a chain may express relative to its root; it is not a claim about what can be said. Separately, this specification is **complete relative to the supplied vocabulary**: any policy decidable at the gate can be expressed as a capability, because the vocabulary it ranges over is namespace-supplied and unrestricted by this specification. Anything unexpressible is unexpressed by an author's choice, never excluded by the framework.
 
-## Invocation Exchange 
+## Invocation Exchange
 
 Authority is created in a Delegation Exchange and used in an Invocation Exchange. Both are instances of the Authenticated Exchange Protocol. The Invocation Exchange is the entire authorization lifecycle between an agent's - or the holder's - VID and the service's VID: it opens with presentation and verification, and continues with notices, denials, and disputes for as long as the authority is in use.
 
@@ -455,7 +455,7 @@ Requirements:
 
 TEA integrates with agent protocols such as MCP and A2A at the interfaces those protocols already define, leaving their messages unchanged.
 
-TEA is a family of exchanges between different party pairs. An agent uses the Delegation Exchange to obtain one or more capabilities from one or more parties who have relevant authorities. This exchange is similar in its role to a party interacting with an Authorization Service (AS) via OAuth, but has significantly different trust framework in TEA. An agent uses the Invocation Exchange to access a service by presenting the capability or capabilities that are previously delegated to it. This echange is similar in its role to a party accessing a web service via HTTPS with an anthorization token, but again has significantly different trust framework in TEA.
+TEA is a family of exchanges between different party pairs. An agent uses the Delegation Exchange to obtain one or more capabilities from one or more parties who have relevant authorities. This exchange is similar in its role to a party interacting with an Authorization Service (AS) via OAuth, but has a significantly different trust framework in TEA. An agent uses the Invocation Exchange to access a service by presenting the capability or capabilities that are previously delegated to it. This exchange is similar in its role to a party accessing a web service via HTTPS with an authorization token, but again has a significantly different trust framework in TEA.
 
 The host protocol and the Invocation Exchange are sibling channels over the same TSP relationship: host-protocol payloads and TEA payloads are multiplexed over one authenticated relationship between the same two VIDs. Neither protocol carries the other. All authorization traffic — presentation, denials, notices, disputes — is Invocation Exchange traffic; host-protocol messages carry no authorization content in either direction, and are referenceable from the Invocation Exchange by SAID.
 
