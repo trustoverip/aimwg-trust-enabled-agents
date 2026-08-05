@@ -713,6 +713,10 @@ A credential carries two independent expiry mechanisms, and both MUST be checked
 
 Both exist because they fail differently: `validUntil` bounds exposure even when revocation infrastructure is unreachable, while revocation handles termination that cannot wait for expiry. Verification is fresh on each exercise, not once at receipt.
 
+::: Note 
+Note (what revocation entails — informational). Revocation is optional. When adopted, a delegation is issued in indirect mode: it carries a revocation registry (`rd`) — a verifiable, controller-committed, append-only record of the credential's state (issued / revoked), anchored in the issuer's key-state log. To revoke, the issuer records a state change in that log; a verifier reads the current state at the time of exercise. Both sides take on registry work: the issuer publishes and maintains the registry, and a verifier reads current state from a cache it keeps and consults that, not the issuer — so revocation checking is neither a forced phone-home nor a disclosure of usage to the issuer. State propagates out of band and is eventually consistent: a revocation takes effect only after a defined grace window, so its latency is the synchronization interval plus that window. Which log serves as the anchoring substrate is VID-specific — a KEL for KERI AIDs (the TEL registrar/observer pattern), a DID Log for did:webvh (watchers and webhooks) — but the contract is the same. A delegation that adopts no registry is issued in direct mode: it has a single state (issued) and relies entirely on its `validUntil` limitation for termination.
+:::
+
 #### Fail closed
 
 **If a verifier cannot confirm non-revocation or the relevant key state, it MUST deny. Unverifiable is treated as unauthorized — never allowed by default.** This rule matters because the attacker's natural move is not to break the freshness check but to *block* it: deny-of-service a revocation registry or the VID resolver so that a revoked credential appears usable. Fail-closed turns that attack into a denial of access rather than a grant of it.
