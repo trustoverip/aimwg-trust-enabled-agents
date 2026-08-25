@@ -1,13 +1,15 @@
-TSP-Enabled AI Agent Protocols
+Trust-Enabled Agents (TEA)
 ==================
 
-**Specification Status**: v1.0 Draft
+*Delegation, Invocation, and Accountability for AI agents over the Trust Spanning Protocol*
+
+**Specification Status**: v0.1 Draft
 
 **Latest Draft:**
 
-[https://github.com/trustoverip/aimwg-tsp-enabled-ai-agent-protocols](https://github.com/trustoverip/aimwg-tsp-enabled-ai-agent-protocols)
+[https://github.com/trustoverip/aimwg-trust-enabled-agents](https://github.com/trustoverip/aimwg-trust-enabled-agents)
 
-**Editors:**
+**Author:**
 
 - [Wenjing Chu](https://github.com/wenjing), [Futurewei Technologies, Inc.](https://www.futurewei.com)
 
