@@ -97,7 +97,7 @@ The exchanges defined in this specification are Trust Tasks in the sense of TSP.
 
 ## Authenticated Exchange
 
-The Authenticated Exchange is the pattern by which two TEAs negotiate a request and the terms on which it will be fulfilled. The Delegation and Invocation Exchanges are instances of it. Other Trust Tasks MAY follow or adapt it.
+The Authenticated Exchange is the pattern by which two TEAs negotiate what one party asks of the other and the terms on which it will be fulfilled. The Delegation and Invocation Exchanges are instances of it. Other Trust Tasks MAY follow or adapt it.
 
 The roles are the **Initiator**, which opens the exchange, and the **Responder**. Either MAY be a composite TEA represented by one VID.
 
@@ -110,7 +110,7 @@ The roles are the **Initiator**, which opens the exchange, and the **Responder**
 
 TSP has already authenticated the two VIDs to each other; the exchange concerns only the content of the negotiation. It uses four Container types:
 
-- **Propose.** A request together with the terms of its fulfilment. Either party MAY send one. A Propose with an edge to an earlier Propose in the same exchange is a counter-proposal and supersedes it.
+- **Propose.** What the sender asks of the other party, together with the terms of its fulfilment. Either party MAY send one. A Propose with an edge to an earlier Propose in the same exchange is a counter-proposal and supersedes it.
 - **Accept.** Agreement to a Propose, which it references by edge. An Accept is provisional until confirmed.
 - **Ack.** The proposing party's confirmation of an Accept, which it references by edge. The Ack binds the agreement.
 - **Withdraw.** Declines a Propose, or withdraws the sender's own Propose or provisional Accept, which it references by edge.
@@ -146,7 +146,7 @@ The **authority** is a **capability**, a triple
 capability = ( resource, ability, limitation )
 ```
 
-where the resource is which object, the ability is which operation, and the limitation is under what limits the operation may be exercised. The authorization decision, whether a request is within authority, is computed only from the capability, and composes by meet down a delegation chain.
+where the resource is which object, the ability is which operation, and the limitation is under what limits the operation may be exercised. The authorization decision, whether an Exercise is within authority, is computed only from the capability, and composes by meet down a delegation chain.
 
 **Obligations** and **assumptions** are the **post-gate policy**. They do not enter the authorization decision and are settled after the act.
 
@@ -205,7 +205,7 @@ Each capability axis is a bounded meet-semilattice: a partial order "is at most 
 6. A re-delegation MUST be expressed as a restriction relative to its source: only the narrowed resource or ability and the limitations and obligations added at that step. An axis left unspecified is inherited unchanged.
 7. The **effective capability** of a Capability is the meet of the effective capabilities reached through its edges with its own restriction. Because meet is monotone, no Capability is more permissive than any of its sources.
 8. The **effective obligation set** of a Capability is the union, along its chain, of the obligations whose obligor is the Delegate at the link where they were stated. Such obligations only accumulate. Obligations owed by a Delegator bind that Delegator to that Delegate and do not accumulate down the chain.
-9. Under an `AND` edge group, the effective capability is the meet across all sources, the effective obligation set is the union, and expiry or revocation of any source invalidates the composed authority. Under an `OR` edge group, a request is within authority if it is within the effective capability of some currently valid source met with the restriction; it is not a join. The composed authority remains valid while at least one source is.
+9. Under an `AND` edge group, the effective capability is the meet across all sources, the effective obligation set is the union, and expiry or revocation of any source invalidates the composed authority. Under an `OR` edge group, an Exercise is within authority if it is within the effective capability of some currently valid source met with the restriction; it is not a join. The composed authority remains valid while at least one source is.
 
 ### Resources, abilities and limitations
 
@@ -266,7 +266,7 @@ Each stated item of policy is either **computed**, evaluated against the closed 
 13. A verifier MUST compute the effective capability of a chain by reduction, taking the meet along the chain and the union of the Delegate's obligations, using only the closed-core semantics. Every conforming verifier obtains the same result.
 14. A Capability MAY carry interpreted policy as an interpreted limitation, obligation or assumption. It is signed and SAID-committed like any other content, and MAY be prose or any medium a capable party can interpret, with a content type.
 15. An interpreted limitation can only narrow. No reading of it, however mistaken or adversarial, can grant authority the computed core did not; a misreading can at most fail to narrow. An interpreted obligation or assumption does not enter the authorization decision at all.
-16. Where a party evaluates interpreted policy, it SHOULD emit a signed **Decision Record** Container stating the policy evaluated, the request, and the conclusion, so that a judgment that cannot be reproduced can still be attributed.
+16. Where a party evaluates interpreted policy, it SHOULD emit a signed **Decision Record** Container stating the policy evaluated, the Exercise, and the conclusion, so that a judgment that cannot be reproduced can still be attributed.
 
 A Delegator SHOULD place anything bearing on security or safety, or requiring deterministic agreement between verifiers, in the closed core, and use interpreted policy only for what requires judgment. A Delegate that Acks a Capability carrying interpreted policy accepts liability to act consistently with it as a reasonable party would read it.
 
@@ -392,7 +392,7 @@ Cap_Alice->Agent
   rd: <Alice's registry SAID>
 ```
 
-**Effective capability.** The meet along the chain: create-booking on Alice's account, at most 500 USD, flights only, until day 7. A 420 USD flight is inside; a 900 USD booking, a hotel, or a request on day 8 is not. The Agent's effective obligations are the Delegate-owed ones along the chain: report each booking to Alice within 24 hours. S's duty to serve binds S to Alice and does not accumulate onto the Agent.
+**Effective capability.** The meet along the chain: create-booking on Alice's account, at most 500 USD, flights only, until day 7. A 420 USD flight is inside; a 900 USD booking, a hotel, or an Exercise on day 8 is not. The Agent's effective obligations are the Delegate-owed ones along the chain: report each booking to Alice within 24 hours. S's duty to serve binds S to Alice and does not accumulate onto the Agent.
 
 **Runtime.**
 
@@ -406,7 +406,7 @@ Cap_Alice->Agent
 1. **Presentation.** Agent sends S a Present carrying `{ Cap_Alice->Agent, Cap_S->Alice }`. S verifies that the chain roots in `VID_S`, that the I2I edge holds, that the Present's `i` equals the leaf's `a.i`, that nothing is expired or revoked, and that the effective capability is non-empty. S sends a Bind.
 2. **Exercise.** Agent sends an Exercise referencing the Bind: create-booking, the 420 USD flight. S confirms the operation is within the effective capability and the chain is still valid, creates the booking, and sends a Result referencing the Exercise.
 3. **Obligation.** The Exercise triggers the report obligation. Agent sends Alice a Discharge referencing the obligation clause and the Exercise.
-4. **Later.** A 900 USD request is answered with a Denial, condition `exceeds-capability`. On day 8, any Exercise is answered with a Denial, condition `stale`, until Agent re-presents a fresh chain.
+4. **Later.** A 900 USD Exercise is answered with a Denial, condition `exceeds-capability`. On day 8, any Exercise is answered with a Denial, condition `stale`, until Agent re-presents a fresh chain.
 
 **Two messages in Container form.** Every TEA message has the same shape; the Exercise of step 2 and its Result are shown here in JSON, each sealed in a TSP message from the VID in `i` and carrying that VID's signature over `d` as a CESR attachment.
 
@@ -559,7 +559,7 @@ Under an OR-group `{p₁..pₖ}`, a node has no single effective capability; eac
 branch j:  E(n)|ⱼ = E(pⱼ) ∩ r(n)        D(n)|ⱼ = D(pⱼ) ∪ d(n)
 ```
 
-A request `q` is authorized at `n` iff there exists a currently-valid branch `j` with `q ≤ E(n)|ⱼ`; the obligations owed for that exercise are `D(n)|ⱼ`.
+An Exercise `q` is within authority at `n` iff there exists a currently-valid branch `j` with `q ≤ E(n)|ⱼ`; the obligations owed for that exercise are `D(n)|ⱼ`.
 
 *Claim.* Every admissible exercise is bounded by the root of its branch, and no escalation is introduced by the disjunction.
 
@@ -567,7 +567,7 @@ A request `q` is authorized at `n` iff there exists a currently-valid branch `j`
 
 ### A.7 Interpreted policy preserves soundness
 
-An interpreted limitation `O(n)` is a narrowing filter evaluated at exercise. The authorized set is `{ q : q ≤ E(n) ∧ O(n)(q) } ⊆ { q : q ≤ E(n) }`. Since `O(n)` only removes requests, the upper bound of Theorem 1 holds *a fortiori*; no interpreted policy can broaden authority beyond the computed result.
+An interpreted limitation `O(n)` is a narrowing filter evaluated at exercise. The authorized set is `{ q : q ≤ E(n) ∧ O(n)(q) } ⊆ { q : q ≤ E(n) }`, where `q` ranges over Exercises. Since `O(n)` only removes Exercises, the upper bound of Theorem 1 holds *a fortiori*; no interpreted policy can broaden authority beyond the computed result.
 
 ### A.8 Role of the structural premises
 

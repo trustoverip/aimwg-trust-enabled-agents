@@ -47,8 +47,8 @@ The rationale for favouring a closed capability core in this specification is th
 
 Soundness and completeness are separate claims, and the theorems of the Soundness appendix establish only the first.
 
-*Claim.* For any policy decidable at the gate — decidable from the credential chain and the request alone, identically for every verifier — there is a capability expressing it.
+*Claim.* For any policy decidable at the gate — decidable from the Capability chain and the Exercise alone, identically for every verifier — there is a capability expressing it.
 
-*Argument.* A decidable gate policy `P` partitions requests into permitted and not; write `S_P` for the permitted set. The author names the terms `P` ranges over in a namespace and writes `P` in a conforming profile; a verifier then evaluates it, and nothing is left over. A counterexample could arise only if this specification restricted the available vocabulary. It does not: vocabulary is namespace-supplied and deliberately out of scope. ∎
+*Argument.* A decidable gate policy `P` partitions Exercises into permitted and not; write `S_P` for the permitted set. The author names the terms `P` ranges over in a namespace and writes `P` in a conforming profile; a verifier then evaluates it, and nothing is left over. A counterexample could arise only if this specification restricted the available vocabulary. It does not: vocabulary is namespace-supplied and deliberately out of scope. ∎
 
 *Consequence.* The model is **sound, and complete relative to the supplied vocabulary** — relative completeness in the familiar sense, as a program logic is complete relative to the expressiveness of its assertion language. Here the qualifier costs nothing, since the thing completeness is relative to is out of scope by design: anything unexpressible is unexpressed by an author's choice, never excluded by the framework.
