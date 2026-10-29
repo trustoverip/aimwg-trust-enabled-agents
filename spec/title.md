@@ -3,7 +3,7 @@ Trust-Enabled Agents (TEA)
 
 *Delegation, Invocation, and Accountability for AI agents over the Trust Spanning Protocol*
 
-**Specification Status**: v0.1 Draft
+**Specification Status**: v0.2 Draft
 
 **Latest Draft:**
 
