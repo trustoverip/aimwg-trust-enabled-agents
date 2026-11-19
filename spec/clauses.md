@@ -295,39 +295,55 @@ Both parties hold the same signed chain. Divergent evaluations are disputes, not
 
 *Support for this subsection is optional. It applies only where the effective capability carries an `appraisalPolicy` limitation.*
 
-The chain proves that authority is valid. It does not show that the runtime exercising the authority is the runtime the authority was delegated to. A Delegator that needs that assurance states it as a limitation, and the holder supplies evidence about its runtime, appraised under the Remote ATtestation procedureS (RATS) architecture [9]. This specification defines no new evidence format. It reuses the RATS roles and the EAT Attestation Results (EAR) format [11], a profile of the Entity Attestation Token (EAT) [10], and defines only how an appraisal is bound to an exercise of authority.
+The chain proves that authority is valid. It does not show that the runtime exercising the authority is the runtime the authority was delegated to. A Delegator that needs that assurance states it as a limitation, and the holder supplies evidence about its runtime, appraised under the Remote ATtestation procedureS (RATS) architecture [9]. This specification defines no new evidence format. It reuses the RATS roles and defines only how an appraisal is bound to an exercise of authority. Its requirements are stated on a RATS Attestation Result and do not depend on the format of that result. A service MAY accept any format that conveys the items listed below. One encoding is described here: the EAT Attestation Results (EAR) format [11], a profile of the Entity Attestation Token (EAT) [10]. Another could be a Container signed by a RATS Verifier's VID and carried as content of a message ([Requirements](#requirements), requirement 5); this specification does not define one.
 
 **Roles.** The holder's Controller, together with the models and memory modules whose runtime state the Delegator relies on, is the RATS Attester. The service is the RATS Relying Party. A RATS Verifier, accepted by the service for this purpose, appraises the Attester's Evidence and produces an Attestation Result. This subsection writes "RATS Verifier" to keep that role apart from the generic "verifier" used elsewhere in this specification. Which RATS Verifiers to accept is the service's choice, as the choice of roots is.
 
-**Evidence and Attestation Results.** Evidence is what the Attester states about itself. An Attestation Result is what a RATS Verifier concludes from that Evidence. Under this subsection the service applies its policy to an Attestation Result and does not appraise Evidence itself. Hardware-rooted and software-only Evidence yield the same kind of Attestation Result, so the service needs no separate path for either.
+**Evidence and Attestation Results.** Evidence is what the Attester states about itself. An Attestation Result is what a RATS Verifier concludes from that Evidence. Under this subsection the service applies its policy to an Attestation Result and does not appraise Evidence itself. Hardware-rooted and software-only Evidence yield the same kind of Attestation Result, so the service needs no separate path for either. This subsection writes "Attestation Result" in full, to keep it apart from the Result that answers an Exercise.
+
+**Items.** Whatever its format, an Attestation Result used under this subsection conveys five items: the RATS Verifier that issued it, with that Verifier's signature; the appraisal policies under which it was produced; an overall status, expressed as one of the trustworthiness tiers of Attestation Results for Secure Interactions (AR4SI) [12]; its time of issue and, optionally, of expiry; and, where E3 requires one, the challenge it answers.
 
 **Limitations.** Runtime evidence is required through three limitation-types, each of a kind defined in [Resources, abilities and limitations](#resources-abilities-and-limitations), so that re-delegation can only tighten them.
 
 | limitation-type | kind | value | meaning |
 |---|---|---|---|
-| `appraisalPolicy` | membership set | appraisal policy identifiers, as carried in EAR `ear_appraisal_policy_ids` | An Attestation Result is required, produced under one of these policies. |
+| `appraisalPolicy` | membership set | appraisal policy identifiers | An Attestation Result is required, produced under one of these policies. |
 | `appraisalFloor` | membership set | a subset of { `affirming`, `warning` } | The overall status the service may accept. |
 | `evidenceMaxAge` | bounded scalar | seconds | The greatest age of an Attestation Result at evaluation. |
 
 `appraisalFloor` and `evidenceMaxAge` take effect only together with `appraisalPolicy`. Where `evidenceMaxAge` is absent, the service applies its own bound, which MUST be finite. An `appraisalPolicy` that is empty after the meet admits no runtime, and every Exercise is denied.
 
-**Carriage.** In the passport model [9, Section 5.1] the holder obtains the EAR and carries it as the attribute `ear` of a Present or an Exercise: the signed EAR as a JSON Web Token (JWT) in compact form, or as a CBOR Web Token (CWT) in base64url. In the background-check model [9, Section 5.2] the holder carries its Evidence as the attribute `evidence`, `{ "type": <media type>, "value": <base64url> }`, and the service obtains the EAR from a RATS Verifier it accepts. The requirements below apply to the EAR in both models.
+**Carriage.** In the passport model [9, Section 5.1] the holder obtains the Attestation Result and carries it in a Present or an Exercise, as its encoding defines. In the background-check model [9, Section 5.2] the holder carries its Evidence as the attribute `evidence`, `{ "type": <media type>, "value": <base64url> }`, and the service obtains the Attestation Result from a RATS Verifier it accepts. The requirements below apply to the Attestation Result in both models.
 
-**E1. Validity.** The EAR MUST be signed by a RATS Verifier the service accepts, MUST carry the `eat_profile` of an EAR version the service supports (for [11], `tag:ietf.org,2026:rats/ear#05`), and its `ear_appraisal_policy_ids` MUST include a value in the effective `appraisalPolicy`. A RATS Verifier MAY be identified by a VID, in which case its signature is verified against that VID's key state at the EAR's `iat`.
+**E1. Validity.** The Attestation Result MUST be signed by a RATS Verifier the service accepts, MUST be in a format and version the service supports, and MUST have been produced under at least one appraisal policy in the effective `appraisalPolicy`. A RATS Verifier MAY be identified by a VID, in which case its signature is verified against that VID's key state at the time of issue.
 
-**E2. Freshness by time** [9, Section 10.1]. When the service evaluates an EAR, its `iat` MUST be no older than the effective `evidenceMaxAge`, and its `exp`, if present, MUST NOT have passed.
+**E2. Freshness by time** [9, Section 10.1]. When the service evaluates an Attestation Result, the time since its issue MUST NOT exceed the effective `evidenceMaxAge`, and its time of expiry, if present, MUST NOT have passed.
 
-**E3. Freshness by nonce** [9, Section 10.2]. Where the effective capability carries `appraisalPolicy`, the Bind MUST carry a `challenge` attribute of 8 to 64 random bytes, in base64url. A Result MAY carry a new `challenge`, which replaces the previous one. An EAR carried with an Exercise MUST carry the current challenge as `eat_nonce`, and the Evidence it appraises MUST have carried the same value. The holder MAY reuse one EAR across Exercises while the challenge is unchanged and E2 holds, so the service sets how often fresh evidence is needed by how often it rotates the challenge.
+**E3. Freshness by nonce** [9, Section 10.2]. Where the effective capability carries `appraisalPolicy`, the Bind MUST carry a `challenge` attribute of 8 to 64 random bytes, in base64url. A Result MAY carry a new `challenge`, which replaces the previous one. An Attestation Result that the service relies on for an Exercise MUST carry the current challenge, and the Evidence it appraises MUST have carried the same value. The holder MAY reuse one Attestation Result across Exercises while the challenge is unchanged and E2 holds, so the service sets how often fresh evidence is needed by how often it rotates the challenge.
 
 **E4. Mechanisms are not interchangeable.** A timestamp, a nonce and a Bind establish different things. A Bind shows that authority is bound to the holder's VID; it is not evidence of runtime state, and a service MUST NOT treat it as such. A Present, which precedes any challenge, is fresh by E2 only.
 
 **E5. Holder binding.** An appraisal policy named in `appraisalPolicy` MUST require that the Evidence is bound to the holder's VID, for example by the Attester signing with, or attesting to, a key in that VID's key state.
 
-**E6. Status.** The service MUST take the EAR's overall `ear_status`, or, where it is absent, the least trustworthy `ear_status` across `submods`, and MUST proceed only if that status is in the effective `appraisalFloor`. Otherwise it MUST answer with a Denial carrying the condition defined in [Denial conditions](#denial-conditions).
+**E6. Status.** The service MUST take the overall status of the Attestation Result and MUST proceed only if that status is in the effective `appraisalFloor`. Otherwise it MUST answer with a Denial carrying the condition defined in [Denial conditions](#denial-conditions).
 
-**E7. Evidence only narrows.** An EAR, whatever its status, never widens the effective capability. A service MUST NOT accept an Exercise outside the effective capability on the strength of runtime evidence.
+**E7. Evidence only narrows.** An Attestation Result, whatever its status, never widens the effective capability. A service MUST NOT accept an Exercise outside the effective capability on the strength of runtime evidence.
 
-**E8. Record.** The service SHOULD retain each EAR it relied on together with the Result it sent, under [Accountability](#accountability).
+**E8. Record.** The service SHOULD retain each Attestation Result it relied on together with the Result it sent, under [Accountability](#accountability).
+
+**EAR encoding.** In the passport model the holder carries the signed EAR [11] as the attribute `ear` of a Present or an Exercise: a JSON Web Token (JWT) in compact form, or a CBOR Web Token (CWT) in base64url. The service recognizes the format and its version by `eat_profile`, which for [11] is `tag:ietf.org,2026:rats/ear#05`. The five items are found in an EAR as follows.
+
+| item | used by | in an EAR |
+|---|---|---|
+| issuing RATS Verifier | E1 | the signer of the JWT or CWT |
+| appraisal policies | E1 | `ear_appraisal_policy_ids`, in the entries of `submods` |
+| overall status | E6 | `ear_status` at the top level |
+| time of issue and of expiry | E1, E2 | `iat` and `exp` |
+| challenge | E3 | `eat_nonce` at the top level |
+
+EAR leaves the top-level `ear_status` optional. Where it is absent, E6 applies to the `ear_status` of each entry of `submods`, and the service MUST proceed only if every one of them is in the effective `appraisalFloor`. An entry that is a nested EAR, or a Nested-Token that the service parses and verifies, is read by the same rule. Any other Nested-Token counts as `incomplete`, as EAR requires of a RATS Verifier [11].
+
+An EAR-appraisal entry of `submods` can carry an `eat_nonce` of its own, which EAR defines as the nonce extracted from the Evidence. Under E3, where it is present, it MUST equal the current challenge as well.
 
 *Example (informative).* In the Worked Example, Alice could add to `Cap_Alice->Agent`:
 
@@ -336,7 +352,7 @@ The chain proves that authority is valid. It does not show that the runtime exer
       appraisalFloor:  [ affirming ]
       evidenceMaxAge:  600
 
-S's Bind then carries `"challenge": "YmluZC1jaGFsbGVuZ2UtMDAwMS1leGFtcGxl"`, and the Agent's Exercise carries `"ear": "eyJhbGciOiJFUzI1NiJ9.…"`, whose claims-set is:
+S's Bind then carries `"challenge": "YmluZC1jaGFsbGVuZ2UtMDAwMS1leGFtcGxl"`. With the EAR encoding, the Agent's Exercise carries `"ear": "eyJhbGciOiJFUzI1NiJ9.…"`, whose claims-set is:
 
     {
       "eat_profile": "tag:ietf.org,2026:rats/ear#05",
@@ -384,22 +400,22 @@ Where the effective capability carries an `appraisalPolicy` limitation, the foll
 
 | condition | when | AR4SI tier and values |
 |---|---|---|
-| `evidence-invalid` | The EAR fails E1. | not applicable: not an Attestation Result the service can use |
-| `evidence-stale` | The EAR fails E2 or E3. | not applicable: freshness, not appraisal |
+| `evidence-invalid` | The Attestation Result fails E1. | not applicable: not an Attestation Result the service can use |
+| `evidence-stale` | The Attestation Result fails E2 or E3. | not applicable: freshness, not appraisal |
 | `evidence-contraindicated` | The status under E6 is `contraindicated`. | Contraindicated: 96 to 127, -97 to -128 |
 | `evidence-warning` | The status is `warning` and `warning` is not in the effective `appraisalFloor`. | Warning: 32 to 95, -33 to -96 |
 | `evidence-incomplete` | The status is `incomplete`. | Incomplete: 1 (unknown elements), -1 (RATS Verifier malfunction) |
-| `evidence-no-claim` | No EAR or Evidence is supplied, or the status is `none`. | None: 0, "no claim made" |
+| `evidence-no-claim` | No Attestation Result or Evidence is supplied, or the status is `none`. | None: 0, "no claim made" |
 
-Where the service's own appraisal policy for Attestation Results requires particular trust vector categories, it applies the same tiers category by category. A missing category and the value 0 both give `evidence-no-claim`, since AR4SI treats them alike.
+Where the service's own appraisal policy for Attestation Results requires particular trust vector categories, it applies the same tiers category by category. A missing category and the value 0 both give `evidence-no-claim`, since AR4SI treats them alike. EAR does not permit `none` as a value of `ear_status` [11]. With an EAR, `evidence-no-claim` therefore arises only where no EAR or Evidence is supplied, or where a required category is missing or 0.
 
 **D1. Absent is not negative.** `evidence-no-claim` and `evidence-incomplete` mean that nothing was established about the runtime. They are not findings against it. A service MUST NOT report, record or act on either as `evidence-contraindicated`.
 
-**D2. Fail-closed still applies.** Where `appraisalPolicy` requires an appraisal, absence denies just as a negative result does. The conditions differ so that the holder, the Delegator and an auditor can tell "could not show" from "shown untrustworthy". The holder can cure `evidence-no-claim`, `evidence-incomplete` and `evidence-stale` with a fresh EAR; it cannot cure `evidence-contraindicated` without a change to its runtime.
+**D2. Fail-closed still applies.** Where `appraisalPolicy` requires an appraisal, absence denies just as a negative result does. The conditions differ so that the holder, the Delegator and an auditor can tell "could not show" from "shown untrustworthy". The holder can cure `evidence-no-claim`, `evidence-incomplete` and `evidence-stale` with a fresh Attestation Result; it cannot cure `evidence-contraindicated` without a change to its runtime.
 
 **D3. Precedence.** Where more than one condition applies, the service reports the first in this order: `no-binding`, `invalid-chain`, `stale`, `exceeds-capability`, `evidence-invalid`, `evidence-stale`, `evidence-contraindicated`, `evidence-warning`, `evidence-incomplete`, `evidence-no-claim`, `declined`.
 
-**D4. Disclosure.** A Denial with an evidence condition MAY name the trust vector categories behind it. It SHOULD NOT carry the EAR's details, which the service keeps under [Accountability](#accountability).
+**D4. Disclosure.** A Denial with an evidence condition MAY name the trust vector categories behind it. It SHOULD NOT carry the details of the Attestation Result, which the service keeps under [Accountability](#accountability).
 
 **D5. Consequence.** Only `evidence-contraindicated` is a finding against the holder's runtime. It MAY lead the service to end the binding with a Notice, and it is evidence in a Dispute.
 
