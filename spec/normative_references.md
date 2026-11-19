@@ -25,3 +25,11 @@
 <a id="STDIO">7</a><a id="ref1"></a>. The MCP Community Specification, [stdio](https://modelcontextprotocol.io/specification/draft/basic/transports/stdio), Revision 2026-07-28.
 
 <a id="MCP">8</a><a id="ref1"></a>. The MCP Community Specification, [Model Context Protocol](https://modelcontextprotocol.io/specification/draft), Revision 2026-07-28.
+
+<a id="RATS">9</a><a id="ref1"></a>. H. Birkholz, D. Thaler, M. Richardson, N. Smith, W. Pan, [Remote ATtestation procedureS (RATS) Architecture](https://www.rfc-editor.org/rfc/rfc9334), RFC 9334, January 2023.
+
+<a id="EAT">10</a><a id="ref1"></a>. L. Lundblade, G. Mandyam, J. O'Donoghue, C. Wallace, [The Entity Attestation Token (EAT)](https://www.rfc-editor.org/rfc/rfc9711), RFC 9711, April 2025.
+
+<a id="EAR">11</a><a id="ref1"></a>. T. Fossati, E. Voit, S. Trofimov, H. Birkholz, [EAT Attestation Results](https://datatracker.ietf.org/doc/draft-ietf-rats-ear/05/), draft-ietf-rats-ear-05, 2 November 2026, work in progress.
+
+<a id="AR4SI">12</a><a id="ref1"></a>. E. Voit, H. Birkholz, T. Hardjono, T. Fossati, V. Scarlata, [Attestation Results for Secure Interactions](https://datatracker.ietf.org/doc/draft-ietf-rats-ar4si/11/), draft-ietf-rats-ar4si-11, 31 October 2026, work in progress.
